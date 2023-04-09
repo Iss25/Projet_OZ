@@ -30,7 +30,12 @@ define
    %%%                  <probability/frequence> := <int> | <float>
    fun {Press}
       % TODO
-      0
+      local Prob_word Prob List OutputText in 
+         Prob_word = [ah bb]
+         Prob = 0.5
+         List = [Prob_word Prob]
+         OutputText = List
+      end
    end
    
     %%% Lance les N threads de lecture et de parsing qui liront et traiteront tous les fichiers
