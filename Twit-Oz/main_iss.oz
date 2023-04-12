@@ -17,6 +17,7 @@ define
       {Browser.browse Buf}
    end
    
+   InputText OutputText
    %%% /!\ Fonction testee /!\
    %%% @pre : les threads sont "ready"
    %%% @post: Fonction appellee lorsqu on appuie sur le bouton de prediction
@@ -30,12 +31,15 @@ define
    %%%                  <probability/frequence> := <int> | <float>
    fun {Press}
       % TODO
-      local Prob_word Prob List OutputText in 
-         Prob_word = [ah bb]
-         Prob = 0.5
-         List = [Prob_word Prob]
-         OutputText = List
-      end
+      Prob_word Prob List Text Contents in 
+      Prob_word = [ah bb]
+      Prob = 0.5
+      List = [Prob_word Prob]
+      %{InputText get(1:Contents)}
+      %{OutputText set(Contents)}
+      %{OutputText set('o')}
+      {Browse "ok"}
+      Text = 1
    end
    
     %%% Lance les N threads de lecture et de parsing qui liront et traiteront tous les fichiers
@@ -83,7 +87,7 @@ define
             % Creation de l interface graphique
 	 Description=td(
 			title: "Text predictor"
-			lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) button(text:"Predict" width:15 action:Press))
+			lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
 			text(handle:OutputText width:50 height:10 background:black foreground:white glue:w wrap:word)
 			action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
 			)
@@ -93,7 +97,7 @@ define
 	 {Window show}
 	 
 	 {InputText tk(insert 'end' "Loading... Please wait.")}
-	 {InputText bind(event:"<Control-s>" action:Press)} % You can also bind events
+	 {InputText bind(event:"<Control-s>" action:proc{$} X in X = {Press} end)} % You can also bind events
 	 
             % On lance les threads de lecture et de parsing
 	 SeparatedWordsPort = {NewPort SeparatedWordsStream}
