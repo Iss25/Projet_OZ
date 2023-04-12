@@ -17,7 +17,8 @@ define
       {Browser.browse Buf}
    end
    
-   InputText OutputText
+   InputText 
+   OutputText
    %%% /!\ Fonction testee /!\
    %%% @pre : les threads sont "ready"
    %%% @post: Fonction appellee lorsqu on appuie sur le bouton de prediction
@@ -30,15 +31,13 @@ define
    %%%                                           | nil
    %%%                  <probability/frequence> := <int> | <float>
    fun {Press}
-      % TODO
       Prob_word Prob List Text Contents in 
       Prob_word = [ah bb]
       Prob = 0.5
       List = [Prob_word Prob]
-      %{InputText get(1:Contents)}
-      %{OutputText set(Contents)}
-      %{OutputText set('o')}
-      {Browse "ok"}
+      {InputText get(Contents)}
+      {OutputText set(Contents)}
+      {Browse ok}
       Text = 1
    end
    
@@ -79,7 +78,7 @@ define
       %%% soumission !!!
       % {ListAllFiles {OS.getDir TweetsFolder}}
        
-      local NbThreads InputText OutputText Description Window SeparatedWordsStream SeparatedWordsPort in
+      local NbThreads Description Window SeparatedWordsStream SeparatedWordsPort in
 	 {Property.put print foo(width:1000 depth:1000)}  % for stdout siz
 	 
             % TODO
