@@ -34,10 +34,10 @@ define
       Prob_word Prob List Text Contents in 
       Prob_word = [ah bb]
       Prob = 0.5
-      List = [Prob_word Prob]
+      %Prob = {FloatToString Prob} ==> Pb pr cast en String
+      List = [Prob_word Prob 1]
       {InputText get(Contents)}
-      {OutputText set(Contents)}
-      {Browse ok}
+      {OutputText set(List)}
       Text = 1
    end
    
@@ -60,11 +60,11 @@ define
    end
 
    %%% Decomnentez moi si besoin
-   %proc {ListAllFiles L}
-   %   case L of nil then skip
-   %   [] H|T then {Browse {String.toAtom H}} {ListAllFiles T}
-   %   end
-   %end
+   proc {ListAllFiles L}
+      case L of nil then skip
+      [] H|T then {Browse {String.toAtom H}} {ListAllFiles T}
+      end
+   end
     
    %%% Procedure principale qui cree la fenetre et appelle les differentes procedures et fonctions
    proc {Main}
