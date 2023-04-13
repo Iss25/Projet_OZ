@@ -33,9 +33,8 @@ define
    fun {Press}
       Prob_word Prob List Text Contents in 
       Prob_word = [ah bb]
-      Prob = 0.5
-      %Prob = {FloatToString Prob} ==> Pb pr cast en String
-      List = [Prob_word Prob 1]
+      Prob = [0.5] 
+      List = [Prob_word Prob]
       {InputText get(Contents)}
       {OutputText set(List)}
       Text = 1
