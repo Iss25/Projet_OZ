@@ -57,59 +57,7 @@ define
    %%%  +--------------------------------------------------------------------------------+
    %%%
 
-   fun {InsertWord Word Probability Tree}
-      local InsertedTree Pre Post in 
-         InsertedTree = tree(Word: tree(Probability))
-         {Record.partition Tree fun{$ T} T.1 < Probability end Pre Post}
-         {Adjoin {Adjoin Pre InsertedTree} Post}
-      end
-   end
-
-   fun {ParseLine Line X Acc}
-      case Line of 
-         nil then X = nil Acc
-         [] H|T then G in X = {List.map {String.tokens {List.map H Char.toLower} & } String.toAtom} {ParseLine T G Acc|G}
-      end
-   end
-
-   fun {Lower Word}
-      {List.map Word Char.toLower}
-   end
-   fun {ParseLines Line}
-      {List.map {List.filter {List.map {String.tokens Line & } Lower} fun{$ W} W\=nil end} String.toAtom}
-   end
-
-   fun {FileToTree File X Acc}
-      local L in
-         {File getS(L)}
-         if L == false then X = nil Acc 
-         else G A in
-            X = {List.map {List.filter {String.tokens L &.} fun{$ W} W\=nil end} ParseLines}
-            {Browse X}
-            {FileToTree File G Acc|G}
-         end
-      end
-   end
-
-   fun {Fold X Y}
-      if X.1 == Y.1 then 
-         tree(X X.2 Y.2)
-      else
-         X|Y
-      end
-   end
-
-   fun {ParseFile File} 
-      local G Trees A in 
-         Trees = {FileToTree File G G}.1
-         A = {FoldL Trees.2 Fold Trees.1}
-         {Browse A}
-         for Tree in Trees do
-            skip
-         end
-      end
-      0
-   end   
+   
     %%% Lance les N threads de lecture et de parsing qui liront et traiteront tous les fichiers
     %%% Les threads de parsing envoient leur resultat au port Port
    proc {LaunchThreads Port N}
