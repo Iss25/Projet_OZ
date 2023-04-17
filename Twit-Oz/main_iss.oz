@@ -19,6 +19,10 @@ define
    
    InputText 
    OutputText
+   NbThreads
+   SeparatedWordsStream
+   SeparatedWordsPort
+
    %%% /!\ Fonction testee /!\
    %%% @pre : les threads sont "ready"
    %%% @post: Fonction appellee lorsqu on appuie sur le bouton de prediction
@@ -31,13 +35,20 @@ define
    %%%                                           | nil
    %%%                  <probability/frequence> := <int> | <float>
    fun {Press}
-      Prob_word Prob List Text Contents in 
+      Prob_word Prob List Contents in 
       Prob_word = [ah bb]
       Prob = [0.5] 
       List = [Prob_word Prob]
       {InputText get(Contents)}
+      {Browse Contents}
+      {Browse {String.toAtom Contents}}
+      % On lance les threads de lecture et de parsing
+	   %SeparatedWordsPort = {NewPort SeparatedWordsStream}
+      NbThreads = 4
+      %{LaunchThreads SeparatedWordsPort NbThreads}
+      %{Fct_Alex SeparatedWordsPort}      
       {OutputText set(List)}
-      Text = 1
+      0
    end
    
     %%% Lance les N threads de lecture et de parsing qui liront et traiteront tous les fichiers
@@ -75,9 +86,9 @@ define
       %% se trouvant dans le dossier
       %%% N'appelez PAS cette fonction lors de la phase de
       %%% soumission !!!
-      % {ListAllFiles {OS.getDir TweetsFolder}}
+      %{ListAllFiles {OS.getDir TweetsFolder}}
        
-      local NbThreads Description Window SeparatedWordsStream SeparatedWordsPort in
+      local  Description Window in
 	 {Property.put print foo(width:1000 depth:1000)}  % for stdout siz
 	 
             % TODO
@@ -96,11 +107,7 @@ define
 	 
 	 {InputText tk(insert 'end' "Loading... Please wait.")}
 	 {InputText bind(event:"<Control-s>" action:proc{$} X in X = {Press} end)} % You can also bind events
-	 
-            % On lance les threads de lecture et de parsing
-	 SeparatedWordsPort = {NewPort SeparatedWordsStream}
-	 NbThreads = 4
-	 {LaunchThreads SeparatedWordsPort NbThreads}
+	
 	 
 	 {InputText set(1:"")}
       end
