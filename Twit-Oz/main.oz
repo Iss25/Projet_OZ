@@ -19,6 +19,12 @@ define
    proc {Browse Buf}
       {Browser.browse Buf}
    end
+
+   InputText 
+   OutputText
+   NbThreads
+   SeparatedWordsStream
+   SeparatedWordsPort
    
    %%% /!\ Fonction testee /!\
    %%% @pre : les threads sont "ready"
@@ -32,8 +38,18 @@ define
    %%%                                           | nil
    %%%                  <probability/frequence> := <int> | <float>
    fun {Press}
-      % TODO
-      0
+      Prob_word Prob List Contents in 
+         Prob_word = [ah bb]
+         Prob = [0.5] 
+         List = [Prob_word Prob]
+         {InputText get(Contents)}
+         % On lance les threads de lecture et de parsing
+         %SeparatedWordsPort = {NewPort SeparatedWordsStream}
+         NbThreads = 4
+         %{LaunchThreads SeparatedWordsPort NbThreads}
+         %{Fct_Alex SeparatedWordsPort}      
+         {OutputText set(List)}
+         0
    end
 
    %%%
@@ -257,7 +273,7 @@ define
             % Creation de l interface graphique
 	 Description=td(
 			title: "Text predictor"
-			lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) button(text:"Predict" width:15 action:Press))
+			lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
 			text(handle:OutputText width:50 height:10 background:black foreground:white glue:w wrap:word)
 			action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
 			)
@@ -267,7 +283,7 @@ define
 	 {Window show}
 	 
 	 {InputText tk(insert 'end' "Loading... Please wait.")}
-	 {InputText bind(event:"<Control-s>" action:Press)} % You can also bind events
+	 {InputText bind(event:"<Control-s>" action:proc{$} X in X = {Press} end)} % You can also bind events
 	 
             % On lance les threads de lecture et de parsing
 	 SeparatedWordsPort = {NewPort SeparatedWordsStream}
