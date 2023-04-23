@@ -10,7 +10,7 @@ import
 define
    InputText 
    OutputText
-   NGram = 2
+   NGram = 4
    %%% Pour ouvrir les fichiers
    class TextFile
       from Open.file Open.text
@@ -37,26 +37,58 @@ define
    %%%                  <probability/frequence> := <int> | <float>
 
    fun {GetBestPrediction Tree Arity BestPrediction BestFrequency}
-      case Arity of nil then BestPrediction else
-         if Tree.(Arity.1) > BestFrequency then {GetBestPrediction Tree Arity.2 Arity.1 Tree.(Arity.1)}  
-         else {GetBestPrediction Tree Arity.2 BestPrediction BestFrequency}
+      case Arity of 
+      nil then BestPrediction 
+      [] H|T then
+         if Tree.H > BestFrequency then {GetBestPrediction Tree T H Tree.H}  
+         else 
+            {GetBestPrediction Tree T BestPrediction BestFrequency}
          end    
       end
    end
 
+   fun {UpdateOutputTree Struct Arity OldStruct}
+      case Arity of 
+      nil then Struct
+      [] Predict|T then 
+         if Predict == '' then {UpdateOutputTree Struct T OldStruct} 
+         else
+            local Value Val PredictTree NewTree in 
+               Value = {CondSelect OldStruct Predict 0}
+               Val = OldStruct.Predict
+               PredictTree = {MakeRecord tree [Predict]}
+               PredictTree.Predict = Value + Val
+               {UpdateOutputTree {Adjoin Struct PredictTree} T OldStruct}
+            end
+         end
+      end
+   end 
+
+   
+   fun {ReadStream Stream Tree}
+      case Stream of 
+      nil then Tree
+      [] H|T then 
+         if H == nil then Tree 
+         else
+            {ReadStream T {UpdateOutputTree Tree {Arity H} H}}
+         end
+      end
+   end
+
    fun {Press}
-      local Contents T SeparatedWordsStream SeparatedWordsPort Return in 
+      local Contents R T A SeparatedWordsStream SeparatedWordsPort Return in 
          {InputText get(Contents)}
+         {OutputText set("Loading... Please wait")}
          % On lance les threads de lecture et de parsing
          SeparatedWordsPort = {NewPort SeparatedWordsStream}
          
          {LaunchThreads SeparatedWordsPort NbThreads}
-         %{Browse SeparatedWordsStream.1}
-         Return = {GetBestPrediction SeparatedWordsStream.1 {Arity SeparatedWordsStream.1} '' 0}
-         {Browse Return}  
-         
+         T = prediction()
+         R = {ReadStream SeparatedWordsStream T}
+         A = {GetBestPrediction R {Arity R} '' 0}
+         if A == '' then Return = "Not Found" else Return = A end
          {OutputText set(Return)}
-         {OutputText get(T)}
          0
       end
    end
@@ -109,59 +141,57 @@ define
       end
    end 
 
-   fun {ParseFile File Line Struct InputTextSplit} 
-      local B L Predict Value PredictTree NewTree in 
-         Predict = {ParseLine {List.map {String.tokens Line & } Lower} InputTextSplit false}
+   fun {DoesntMatch C MatchList}
+      case MatchList of 
+      nil then true
+      [] H|T then
+         if H.1 == C then false 
+         else
+            {DoesntMatch C T} 
+         end 
+      end 
+   end
+
+   fun {StripPonctuation Str}
+      local Ponctuation in 
+         Ponctuation = ["!" "?" ";" "," "." ":"]% "\"" "#" "$" "1" "2" "3" "4" "5" "6" "7" "8" "9" "0" "@"]
+         {List.filter Str fun {$ C} {DoesntMatch C Ponctuation} end}
+      end
+   end
+
+   fun {ParseFile Path File Line Struct InputTextSplit} 
+      local B L Predict Value PredictTree NewTree Tokens in 
+         Predict = {ParseLine {List.map {String.tokens {StripPonctuation Line} & } Lower} InputTextSplit false}
          NewTree = {UpdatePredictTree Struct Predict}
          {File atEnd(B)}
          if B then NewTree
          else 
             {File getS(L)} 
-            {ParseFile File L NewTree InputTextSplit}
+            {ParseFile Path File L NewTree InputTextSplit}
          end
       end
    end
 
    fun {LaunchTask Files StartIndex EndIndex CurrentIndex Struct InputTextSplit}
-      if Files == nil then Struct end
-      if CurrentIndex >= EndIndex then Struct end
-      if CurrentIndex < StartIndex then {LaunchTask Files.2 StartIndex EndIndex CurrentIndex+1 Struct InputTextSplit}
-      else Path Output File Line in 
-         Path = {VirtualString.toAtom {GetSentenceFolder}#"/"#Files.1}
-         File = {New TextFile init(name:Path flags:[read])}
-         {File getS(Line)}
-         Output = {ParseFile File Line Struct InputTextSplit}
-         {LaunchTask Files.2 StartIndex EndIndex CurrentIndex+1 Output InputTextSplit}
-      end
-   end
-
-   fun  {GetFromTo Original From To Current Final}
-      if Current < From then {GetFromTo Original.2 From To Current+1 Final} 
-      elseif Current >= To then Final 
-      else {GetFromTo Original.2 From To Current+1 {Append Final [Original.1]}}
+      case Files of nil then Struct
+      [] H|T then
+         if CurrentIndex >= EndIndex then Struct
+         elseif CurrentIndex < StartIndex then {LaunchTask T StartIndex EndIndex CurrentIndex+1 Struct InputTextSplit}
+         else Path Output File Line in 
+            Path = {VirtualString.toAtom {GetSentenceFolder}#"/"#H}
+            File = {New TextFile init(name:Path flags:[read])}
+            {File getS(Line)}
+            Output = {ParseFile Path File Line Struct InputTextSplit}
+            {LaunchTask T StartIndex EndIndex CurrentIndex+1 Output InputTextSplit}
+         end
       end
    end
 
    fun {NgramInput InputTextSplit}
       if {Length InputTextSplit} =< NGram then InputTextSplit
-      else {NgramInput InputTextSplit.2}
+      else 
+         {NgramInput InputTextSplit.2}
       end
-   end
-   
-   fun {Join S Sep Out}
-      case S of nil then Out
-      [] H|T then {Join T Sep (Out|Sep|H)} 
-      end
-   end
-
-   fun {Reverse S}
-      fun {ReverseAcc S Acc}
-         case S of nil then Acc
-         [] H|T then {ReverseAcc T H|Acc}
-         end
-      end
-   in 
-      {ReverseAcc S ""}
    end
 
    fun {StripLastChar S NChar} 
@@ -174,33 +204,40 @@ define
          end
       end
    in 
-      {Reverse {StringFirstChar {Reverse S} NChar}}
+      {List.reverse {StringFirstChar {List.reverse S} NChar}}
+   end
+
+   proc {LaunchThread Input Port First N Xn Files FilePerThread}
+      local Tree FPT Content Xni in 
+         Tree = tree()
+         if First then FPT = FilePerThread + {FilesAmount Files} mod N else FPT = FilePerThread end
+         thread 
+            local R in 
+               R = {LaunchTask Files N*FilePerThread N*FilePerThread+FPT 0 Tree Input} 
+               {Send Port R}
+               Xni = Xn
+            end 
+         end
+         if N > 0 then
+            {LaunchThread Input Port false N-1 Xni Files FilePerThread}
+         else
+            {Wait Xni}
+            {Send Port nil}
+         end
+      end
    end
 
     %%% Lance les N threads de lecture et de parsing qui liront et traiteront tous les fichiers
     %%% Les threads de parsing envoient leur resultat au port Port
    proc {LaunchThreads Port N}
-      local Files FilePerThread in 
+      local Files FilePerThread Xn Content Input in 
          Files = {OS.getDir {GetSentenceFolder}}
          FilePerThread = {FilesAmount Files} div N
-         for I in 1..N do 
-            local Tree FPT Content in 
-               Tree = tree()
-               if I == N-1 then FPT = FilePerThread + {FilesAmount Files} mod N else FPT = FilePerThread end
-               thread 
-                  local R A Input in 
-                     A = {GetFromTo Files I*FilePerThread I*FilePerThread+FPT I*FilePerThread {MakeList 0}}
-                     
-                     %{Browse {Length A}}
-                     {InputText get(Content)}
-                     Input = {NgramInput {List.map {String.tokens {StripLastChar Content 2} & } Lower}}
-                     {Browse {List.map Input String.toAtom}}
-                     R = {LaunchTask Files I*FilePerThread I*FilePerThread+FPT 0 Tree Input} 
-                     {Send Port R}
-                  end 
-               end
-            end
-         end
+         Xn = unit
+         {InputText get(Content)}
+         Input = {NgramInput {List.map {String.tokens {StripLastChar Content 1} & } Lower}}
+         {Browse {List.map Input String.toAtom}}
+         {LaunchThread Input Port true N Xn Files FilePerThread}
       end
    end
    
@@ -244,7 +281,7 @@ define
       %%% soumission !!!
       % {ListAllFiles {OS.getDir TweetsFolder}}
        
-      local NbThreads Description Window SeparatedWordsStream in
+      local NbThreads Description Window SeparatedWordsStream B in
 	 {Property.put print foo(width:1000 depth:1000)}  % for stdout siz
 	 
             % TODO
@@ -271,9 +308,7 @@ define
 	 %NbThreads = 32
     %InputTextSplit = {String.tokens "the democrats" & }
 	 %{LaunchThreads SeparatedWordsPort NbThreads}
-
-	 
-	 {InputText set(1:"")}
+	 {InputText set(1:{StripPonctuation "."})}
       end
    end
     % Appelle la procedure principale
