@@ -23,7 +23,9 @@ define
    InputText 
    OutputText
    NbThreads = 16
-   
+
+   %%% -------------   TODO ---------------------
+
    %%% /!\ Fonction testee /!\
    %%% @pre : les threads sont "ready"
    %%% @post: Fonction appellee lorsqu on appuie sur le bouton de prediction
@@ -36,6 +38,23 @@ define
    %%%                                           | nil
    %%%                  <probability/frequence> := <int> | <float>
 
+   %%% A QUOI ÇA SERT ??! (à lire avec la voix de Deville) 
+   
+   %%% -------------   TODO ---------------------
+
+
+
+
+   %%%
+   %%% Computes best prediction based on the pairs of prediction-frequency present in the record
+   %%%      Tree:           Record to read
+   %%%      Arity:          Remaining to read record keys 
+   %%%      BestPrediction: Current best computed prediction
+   %%%      BestFrequency:  Current best computed prediction's frequency
+   %%%
+   %%% Returns the best prediction based on its frequency
+   %%%
+
    fun {GetBestPrediction Tree Arity BestPrediction BestFrequency}
       case Arity of 
       nil then BestPrediction 
@@ -46,6 +65,15 @@ define
          end    
       end
    end
+
+   %%%
+   %%% Aggregates a record with another
+   %%%      Struct:    New record
+   %%%      Arity:     Remaining to read record keys 
+   %%%      OldStruct: Old structure to aggregate with
+   %%% 
+   %%% Returns an aggregation of Struct and OldStruct
+   %%%
 
    fun {UpdateOutputTree Struct Arity OldStruct}
       case Arity of 
@@ -64,6 +92,13 @@ define
       end
    end 
 
+   %%%
+   %%% Reads a stream until the nil value is reached, indicating the stream termination. 
+   %%% For each value in the stream, aggregate with the previously read ones
+   %%%      Tree: Aggregated structure
+   %%%
+   %%% Returns an aggregation of all element found in stream
+   %%%
    
    fun {ReadStream Stream Tree}
       case Stream of 
@@ -71,53 +106,51 @@ define
       [] H|T then 
          if H == nil then Tree 
          else
-            {ReadStream T {UpdateOutputTree Tree {Arity H} H}}
+            {ReadStream T {UpdateOutputTree H {Arity H} Tree}}
          end
       end
    end
 
+   %%%
+   %%% Function called when the prediction task is launched
+   %%%
+
    fun {Press}
-      local Contents R T A SeparatedWordsStream SeparatedWordsPort Return in 
-         {InputText get(Contents)}
+      local PredictionTree TempPredictionTree BestPrediction SeparatedWordsStream SeparatedWordsPort Return in 
          {OutputText set("Loading... Please wait")}
-         % On lance les threads de lecture et de parsing
+
          SeparatedWordsPort = {NewPort SeparatedWordsStream}
          
          {LaunchThreads SeparatedWordsPort NbThreads}
-         T = prediction()
-         R = {ReadStream SeparatedWordsStream T}
-         A = {GetBestPrediction R {Arity R} '' 0}
-         if A == '' then Return = "Not Found" else Return = A end
-         {OutputText set(Return)}
+         TempPredictionTree = prediction()
+         PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
+         BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
+         if BestPrediction == '' then PrintedOutput = "Not Found" else PrintedOutput = BestPrediction end
+         {OutputText set(PrintedOutput)}
          0
       end
    end
 
    %%%
-   %%%  +--------------------------------------------------------------------------------+
-   %%%  |                                                                                |
-   %%%  |  We use the following structure                                                |
-   %%%  |                                                                                |
-   %%%  |                                    you                                         |
-   %%%  |                                                                                |
-   %%%  |        must:0.5                  look:0.6                are:0.8               |
-   %%%  |                                                                                |
-   %%%  |   eat:0.7  drink:0.8       awesome:0.4  sick:0.6    beautiful:0.5 stupid:0.6   |
-   %%%  |                                                                                |
-   %%%  |                                                                                |
-   %%%  |  We store a map (record) of each word mapped with its own probability tree     |
-   %%%  |  Example : you: tree(1                                                         |
-   %%%  |                      must:tree(0.7 eat:tree(0.7) drink:tree(0.8))              |
-   %%%  |                      look:tree(0.6 awesome:tree(0.4) sick:tree(0.6))           |
-   %%%  |                      are:tree(0.8 beautiful:tree(0.5) stupid:tree(0.6))        |
-   %%%  |                 )                                                              |
-   %%%  |                                                                                |
-   %%%  +--------------------------------------------------------------------------------+
+   %%% Lowercases a word
+   %%%      Word: Word to lowercase
+   %%%
+   %%% Returns lowercased word
    %%%
 
    fun {Lower Word}
        {List.map Word Char.toLower}
    end
+
+   %%%
+   %%% Parses a line and retrieves the word after the entered text if the latter is in the line
+   %%%      Line:           Line to parse
+   %%%      InputTextSplit: Input text to look for
+   %%%      Found:          Whether a start of match has been found, used to determine if the function found a prediction candidate or not
+   %%%                      at the end of input text parsing
+   %%%
+   %%% Returns a prediction candidate if found, nil otherwise
+   %%%
 
    fun {ParseLine Line InputTextSplit Found}
       case Line#InputTextSplit 
@@ -129,48 +162,92 @@ define
       end
    end
 
-   fun {UpdatePredictTree Struct Predict}
-      if {String.toAtom Predict} == '' then Struct 
+   %%%
+   %%% Computes an updated prediction adding an occurrency for given prediction
+   %%%      Struct:     Old prediction structure
+   %%%      Prediction: Prediction to add occurrency for
+   %%%
+   %%% Returns updated prediction tree
+   %%%
+
+   fun {UpdatePredictionTree Struct Prediction}
+      if {String.toAtom Prediction} == '' then Struct 
       else
          local Value PredictTree NewTree in 
-            Value = {CondSelect Struct {String.toAtom Predict} 0}
-            PredictTree = {MakeRecord tree [{String.toAtom Predict}]}
-            PredictTree.{String.toAtom Predict} = Value + 1
+            Value = {CondSelect Struct {String.toAtom Prediction} 0}
+            PredictTree = {MakeRecord tree [{String.toAtom Prediction}]}
+            PredictTree.{String.toAtom Prediction} = Value + 1
             {Adjoin Struct PredictTree}
          end
       end
    end 
 
-   fun {DoesntMatch C MatchList}
+   %%%
+   %%% Check if the character is not present in the given List
+   %%%      Char:      Character to check presence
+   %%%      MatchList: List of characters to check equality with Char
+   %%%
+   %%% Returns false if Char is not present in Matchlist, true otherwise
+   %%% 
+
+   fun {DoesntMatch Char MatchList}
       case MatchList of 
       nil then true
       [] H|T then
-         if H.1 == C then false 
+         if H.1 == Char then false 
          else
-            {DoesntMatch C T} 
+            {DoesntMatch Char T} 
          end 
       end 
    end
 
+   %%%
+   %%% Strips ponctuation symbols from given String
+   %%%      Str: String to strip ponctuation from
+   %%%
+   %%% Returns truncated String
+   %%%
+
    fun {StripPonctuation Str}
       local Ponctuation in 
-         Ponctuation = ["!" "?" ";" "," "." ":"]% "\"" "#" "$" "1" "2" "3" "4" "5" "6" "7" "8" "9" "0" "@"]
-         {List.filter Str fun {$ C} {DoesntMatch C Ponctuation} end}
+         Ponctuation = ["!" "?" ";" "," "." ":"]
+         {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
       end
    end
 
-   fun {ParseFile Path File Line Struct InputTextSplit} 
-      local B L Predict Value PredictTree NewTree Tokens in 
+   %%%
+   %%% Parses a file a computes a record of prediction mapped with frequency after input in the given file
+   %%%      File:           File to parse
+   %%%      Line:           Currently parsed line
+   %%%      Struct:         Up to now computed prediction record for the file
+   %%%      InputTextSplit: Array of words from user input
+   %%% Returns computed prediction record
+   %%%
+
+   fun {ParseFile File Line Struct InputTextSplit} 
+      local AtEnd ReadLine Predict Value PredictTree NewTree Tokens in 
          Predict = {ParseLine {List.map {String.tokens {StripPonctuation Line} & } Lower} InputTextSplit false}
-         NewTree = {UpdatePredictTree Struct Predict}
-         {File atEnd(B)}
-         if B then NewTree
+         NewTree = {UpdatePredictionTree Struct Predict}
+         {File atEnd(AtEnd)}
+         if AtEnd then NewTree
          else 
-            {File getS(L)} 
-            {ParseFile Path File L NewTree InputTextSplit}
+            {File getS(ReadLine)} 
+            {ParseFile File ReadLine NewTree InputTextSplit}
          end
       end
    end
+
+   %%%
+   %%% Computes a record mapping a prediction with its frequency after input in the given files
+   %%%      Files:          Array of files to read
+   %%%      StartIndex:     Index of the first file to read (included)
+   %%%      EndIndex:       Index of the last file to read  (excluded)
+   %%%      CurrentIndex:   Currently read file index
+   %%%      Struct:         Up to now computed prediction record
+   %%%      InputTextSplit: Array of words from user input
+   %%%
+   %%% Returns computed prediction record
+   %%%
 
    fun {LaunchTask Files StartIndex EndIndex CurrentIndex Struct InputTextSplit}
       case Files of nil then Struct
@@ -181,11 +258,18 @@ define
             Path = {VirtualString.toAtom {GetSentenceFolder}#"/"#H}
             File = {New TextFile init(name:Path flags:[read])}
             {File getS(Line)}
-            Output = {ParseFile Path File Line Struct InputTextSplit}
+            Output = {ParseFile File Line Struct InputTextSplit}
             {LaunchTask T StartIndex EndIndex CurrentIndex+1 Output InputTextSplit}
          end
       end
    end
+
+   %%%
+   %%% Reduces amount of words in the input to NGram 
+   %%%   InputTextSplit: Arrays of words
+   %%%
+   %%% Returns reduced array with size NGram 
+   %%%
 
    fun {NgramInput InputTextSplit}
       if {Length InputTextSplit} =< NGram then InputTextSplit
@@ -193,6 +277,14 @@ define
          {NgramInput InputTextSplit.2}
       end
    end
+
+   %%%
+   %%% Strips last N characters at the end of a String 
+   %%%   S:     String to strip chars from
+   %%%   NChar: Amount of characters to strip
+   %%%
+   %%% Returns truncated string
+   %%%
 
    fun {StripLastChar S NChar} 
       fun {StringFirstChar Str NFchar}
@@ -207,10 +299,21 @@ define
       {List.reverse {StringFirstChar {List.reverse S} NChar}}
    end
 
+   %%%
+   %%% Recursively launches N threads 
+   %%%   Input:         Array of words of the user-input text
+   %%%   Port:          Port to send computing result to
+   %%%   First:         Whether it is the first thread to be launched (used to add last files if {Length Files} mod N != 0)
+   %%%   N:             Thread number (counting from N to 0)
+   %%%   Xn:            Variable bound when thread terminates, used to know when all threads are terminated
+   %%%   Files:         Array of files to read
+   %%%   FilePerThread: Amount of file to read per thread
+   %%%
+
    proc {LaunchThread Input Port First N Xn Files FilePerThread}
       local Tree FPT Content Xni in 
          Tree = tree()
-         if First then FPT = FilePerThread + {FilesAmount Files} mod N else FPT = FilePerThread end
+         if First then FPT = FilePerThread + {Length Files} mod N else FPT = FilePerThread end
          thread 
             local R in 
                R = {LaunchTask Files N*FilePerThread N*FilePerThread+FPT 0 Tree Input} 
@@ -232,7 +335,7 @@ define
    proc {LaunchThreads Port N}
       local Files FilePerThread Xn Content Input in 
          Files = {OS.getDir {GetSentenceFolder}}
-         FilePerThread = {FilesAmount Files} div N
+         FilePerThread = {Length Files} div N
          Xn = unit
          {InputText get(Content)}
          Input = {NgramInput {List.map {String.tokens {StripLastChar Content 1} & } Lower}}
@@ -241,7 +344,6 @@ define
       end
    end
    
-   %%% Ajouter vos fonctions et procédures auxiliaires ici
 
 
    %%% Fetch Tweets Folder from CLI Arguments
@@ -251,24 +353,7 @@ define
    in
       Args.'folder'
    end
-
-   %%% Decomnentez moi si besoin
-   %proc {ListAllFiles L}
-   %   case L of nil then skip
-   %   [] H|T then {Browse {String.toAtom H}} {ListAllFiles T}
-   %   end
-   %end
-
-   fun {FilesAmount L}
-      fun {FilesAmountAcc L A}
-         case L of nil then A
-         [] H|T then {FilesAmountAcc T A+1} end
-      end
-   in 
-      {FilesAmountAcc L 0}
-   end
     
-   %%% Procedure principale qui cree la fenetre et appelle les differentes procedures et fonctions
    proc {Main}
 
       TweetsFolder = {GetSentenceFolder}
@@ -282,35 +367,27 @@ define
       % {ListAllFiles {OS.getDir TweetsFolder}}
        
       local NbThreads Description Window SeparatedWordsStream B in
-	 {Property.put print foo(width:1000 depth:1000)}  % for stdout siz
-	 
-            % TODO
-	 
-            % Creation de l interface graphique
-	 Description=td(
-			title: "Text predictor"
-			lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
-			text(handle:OutputText width:50 height:10 background:black foreground:white glue:w wrap:word)
-			action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
-			)
-	 
-            % Creation de la fenetre
-	 Window={QTk.build Description}
-	 {Window show}
-	 
-	 {InputText tk(insert 'end' "Loading... Please wait.")}
-	 {InputText bind(event:"<Control-s>" action:proc{$} X in X = {Press} end)} % You can also bind events
-   {InputText bind(event:"<Escape>" action:proc{$}{Application.exit 0} end)}
-   {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
-	 
-            % On lance les threads de lecture et de parsing
-	 %SeparatedWordsPort = {NewPort SeparatedWordsStream}
-	 %NbThreads = 32
-    %InputTextSplit = {String.tokens "the democrats" & }
-	 %{LaunchThreads SeparatedWordsPort NbThreads}
-	 {InputText set(1:{StripPonctuation "."})}
+         {Property.put print foo(width:1000 depth:1000)}  % for stdout siz
+         
+         Description=td(
+            title: "Text predictor"
+            lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
+            text(handle:OutputText width:50 height:10 background:black foreground:white glue:w wrap:word)
+            action:proc{$}{Application.exit 0} end
+         )
+      
+         Window={QTk.build Description}
+         {Window show}
+      
+         {InputText tk(insert 'end' "Loading... Please wait.")}
+
+         {InputText bind(event:"<Control-s>" action:proc{$} X in X = {Press} end)} % You can also bind events
+         {InputText bind(event:"<Escape>" action:proc{$}{Application.exit 0} end)}
+         {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
+      
+         {InputText set(1:{StripPonctuation "."})}
       end
    end
-    % Appelle la procedure principale
+
    {Main}
 end
