@@ -116,12 +116,13 @@ define
    %%%
 
    fun {Press}
-      local PredictionTree TempPredictionTree BestPrediction SeparatedWordsStream SeparatedWordsPort Return in 
+      local PredictionTree TempPredictionTree BestPrediction SeparatedWordsStream SeparatedWordsPort PrintedOutput in 
          {OutputText set("Loading... Please wait")}
 
          SeparatedWordsPort = {NewPort SeparatedWordsStream}
          
          {LaunchThreads SeparatedWordsPort NbThreads}
+
          TempPredictionTree = prediction()
          PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
          BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
@@ -385,7 +386,7 @@ define
          {InputText bind(event:"<Escape>" action:proc{$}{Application.exit 0} end)}
          {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
       
-         {InputText set(1:{StripPonctuation "."})}
+         {InputText set(1:{StripPonctuation ""})}
       end
    end
 
