@@ -23,7 +23,9 @@ define
    InputText 
    OutputText
    NbThreads = 16
-   
+
+   %%% -------------   TODO ---------------------
+
    %%% /!\ Fonction testee /!\
    %%% @pre : les threads sont "ready"
    %%% @post: Fonction appellee lorsqu on appuie sur le bouton de prediction
@@ -36,6 +38,23 @@ define
    %%%                                           | nil
    %%%                  <probability/frequence> := <int> | <float>
 
+   %%% A QUOI ÇA SERT ??! (à lire avec la voix de Deville) 
+   
+   %%% -------------   TODO ---------------------
+
+
+
+
+   %%%
+   %%% Computes best prediction based on the pairs of prediction-frequency present in the record
+   %%%      Tree:           Record to read
+   %%%      Arity:          Remaining to read record keys 
+   %%%      BestPrediction: Current best computed prediction
+   %%%      BestFrequency:  Current best computed prediction's frequency
+   %%%
+   %%% Returns the best prediction based on its frequency
+   %%%
+
    fun {GetBestPrediction Tree Arity BestPrediction BestFrequency}
       case Arity of 
       nil then BestPrediction 
@@ -46,6 +65,15 @@ define
          end    
       end
    end
+
+   %%%
+   %%% Aggregates a record with another
+   %%%      Struct:    New record
+   %%%      Arity:     Remaining to read record keys 
+   %%%      OldStruct: Old structure to aggregate with
+   %%% 
+   %%% Returns an aggregation of Struct and OldStruct
+   %%%
 
    %%%
    %%% Aggregates a record with another
@@ -93,6 +121,15 @@ define
       end
    end
 
+   %%%
+   %%% Function called when the prediction task is launched
+   %%%
+
+
+   %%%
+   %%% Function called when the prediction task is launched
+   %%%
+
 
    %%%
    %%% Function called when the prediction task is launched
@@ -101,7 +138,7 @@ define
    fun {Press}
       local PredictionTree TempPredictionTree BestPrediction SeparatedWordsStream SeparatedWordsPort Return in 
          {OutputText set("Loading... Please wait")}
-         % On lance les threads de lecture et de parsing
+
          SeparatedWordsPort = {NewPort SeparatedWordsStream}
          
          {LaunchThreads SeparatedWordsPort NbThreads}
@@ -125,6 +162,27 @@ define
    fun {Lower Word}
        {List.map Word Char.toLower}
    end
+
+   %%%
+   %%% Parses a line and retrieves the word after the entered text if the latter is in the line
+   %%%      Line:           Line to parse
+   %%%      InputTextSplit: Input text to look for
+   %%%      Found:          Whether a start of match has been found, used to determine if the function found a prediction candidate or not
+   %%%                      at the end of input text parsing
+   %%%
+   %%% Returns a prediction candidate if found, nil otherwise
+   %%%
+
+
+   %%%
+   %%% Parses a line and retrieves the word after the entered text if the latter is in the line
+   %%%      Line:           Line to parse
+   %%%      InputTextSplit: Input text to look for
+   %%%      Found:          Whether a start of match has been found, used to determine if the function found a prediction candidate or not
+   %%%                      at the end of input text parsing
+   %%%
+   %%% Returns a prediction candidate if found, nil otherwise
+   %%%
 
 
    %%%
@@ -182,11 +240,28 @@ define
       nil then true
       [] H|T then
          if H.1 == Char then false 
+         if H.1 == Char then false 
          else
+            {DoesntMatch Char T} 
             {DoesntMatch Char T} 
          end 
       end 
    end
+
+   %%%
+   %%% Strips ponctuation symbols from given String
+   %%%      Str: String to strip ponctuation from
+   %%%
+   %%% Returns truncated String
+   %%%
+
+
+   %%%
+   %%% Strips ponctuation symbols from given String
+   %%%      Str: String to strip ponctuation from
+   %%%
+   %%% Returns truncated String
+   %%%
 
 
    %%%
@@ -198,6 +273,8 @@ define
 
    fun {StripPonctuation Str}
       local Ponctuation in 
+         Ponctuation = ["!" "?" ";" "," "." ":"]
+         {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
          Ponctuation = ["!" "?" ";" "," "." ":"]
          {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
       end
@@ -238,6 +315,18 @@ define
    %%% Returns computed prediction record
    %%%
 
+   %%%
+   %%% Computes a record mapping a prediction with its frequency after input in the given files
+   %%%      Files:          Array of files to read
+   %%%      StartIndex:     Index of the first file to read (included)
+   %%%      EndIndex:       Index of the last file to read  (excluded)
+   %%%      CurrentIndex:   Currently read file index
+   %%%      Struct:         Up to now computed prediction record
+   %%%      InputTextSplit: Array of words from user input
+   %%%
+   %%% Returns computed prediction record
+   %%%
+
    fun {LaunchTask Files StartIndex EndIndex CurrentIndex Struct InputTextSplit}
       case Files of nil then Struct
       [] H|T then
@@ -247,11 +336,18 @@ define
             Path = {VirtualString.toAtom {GetSentenceFolder}#"/"#H}
             File = {New TextFile init(name:Path flags:[read])}
             {File getS(Line)}
-            Output = {ParseFile Path File Line Struct InputTextSplit}
+            Output = {ParseFile File Line Struct InputTextSplit}
             {LaunchTask T StartIndex EndIndex CurrentIndex+1 Output InputTextSplit}
          end
       end
    end
+
+   %%%
+   %%% Reduces amount of words in the input to NGram 
+   %%%   InputTextSplit: Arrays of words
+   %%%
+   %%% Returns reduced array with size NGram 
+   %%%
 
    %%%
    %%% Reduces amount of words in the input to NGram 
@@ -266,6 +362,14 @@ define
          {NgramInput InputTextSplit.2}
       end
    end
+
+   %%%
+   %%% Strips last N characters at the end of a String 
+   %%%   S:     String to strip chars from
+   %%%   NChar: Amount of characters to strip
+   %%%
+   %%% Returns truncated string
+   %%%
 
    %%%
    %%% Strips last N characters at the end of a String 
@@ -299,10 +403,21 @@ define
    %%%   FilePerThread: Amount of file to read per thread
    %%%
 
+   %%%
+   %%% Recursively launches N threads 
+   %%%   Input:         Array of words of the user-input text
+   %%%   Port:          Port to send computing result to
+   %%%   First:         Whether it is the first thread to be launched (used to add last files if {Length Files} mod N != 0)
+   %%%   N:             Thread number (counting from N to 0)
+   %%%   Xn:            Variable bound when thread terminates, used to know when all threads are terminated
+   %%%   Files:         Array of files to read
+   %%%   FilePerThread: Amount of file to read per thread
+   %%%
+
    proc {LaunchThread Input Port First N Xn Files FilePerThread}
       local Tree FPT Content Xni in 
          Tree = tree()
-         if First then FPT = FilePerThread + {FilesAmount Files} mod N else FPT = FilePerThread end
+         if First then FPT = FilePerThread + {Length Files} mod N else FPT = FilePerThread end
          thread 
             local R in 
                R = {LaunchTask Files N*FilePerThread N*FilePerThread+FPT 0 Tree Input} 
@@ -324,7 +439,7 @@ define
    proc {LaunchThreads Port N}
       local Files FilePerThread Xn Content Input in 
          Files = {OS.getDir {GetSentenceFolder}}
-         FilePerThread = {FilesAmount Files} div N
+         FilePerThread = {Length Files} div N
          Xn = unit
          {InputText get(Content)}
          Input = {NgramInput {List.map {String.tokens {StripLastChar Content 1} & } Lower}}
@@ -333,7 +448,6 @@ define
       end
    end
    
-   %%% Ajouter vos fonctions et procédures auxiliaires ici
 
 
    %%% Fetch Tweets Folder from CLI Arguments
@@ -343,24 +457,7 @@ define
    in
       Args.'folder'
    end
-
-   %%% Decomnentez moi si besoin
-   %proc {ListAllFiles L}
-   %   case L of nil then skip
-   %   [] H|T then {Browse {String.toAtom H}} {ListAllFiles T}
-   %   end
-   %end
-
-   fun {FilesAmount L}
-      fun {FilesAmountAcc L A}
-         case L of nil then A
-         [] H|T then {FilesAmountAcc T A+1} end
-      end
-   in 
-      {FilesAmountAcc L 0}
-   end
     
-   %%% Procedure principale qui cree la fenetre et appelle les differentes procedures et fonctions
    proc {Main}
 
       TweetsFolder = {GetSentenceFolder}
