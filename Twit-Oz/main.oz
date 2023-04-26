@@ -22,7 +22,7 @@ define
 
    InputText 
    OutputText
-   NbThreads = 16
+   NbThreads = 500
 
    %%% -------------   TODO ---------------------
 
@@ -66,14 +66,6 @@ define
       end
    end
 
-   %%%
-   %%% Aggregates a record with another
-   %%%      Struct:    New record
-   %%%      Arity:     Remaining to read record keys 
-   %%%      OldStruct: Old structure to aggregate with
-   %%% 
-   %%% Returns an aggregation of Struct and OldStruct
-   %%%
 
    %%%
    %%% Aggregates a record with another
@@ -121,15 +113,6 @@ define
       end
    end
 
-   %%%
-   %%% Function called when the prediction task is launched
-   %%%
-
-
-   %%%
-   %%% Function called when the prediction task is launched
-   %%%
-
 
    %%%
    %%% Function called when the prediction task is launched
@@ -162,28 +145,6 @@ define
    fun {Lower Word}
        {List.map Word Char.toLower}
    end
-
-   %%%
-   %%% Parses a line and retrieves the word after the entered text if the latter is in the line
-   %%%      Line:           Line to parse
-   %%%      InputTextSplit: Input text to look for
-   %%%      Found:          Whether a start of match has been found, used to determine if the function found a prediction candidate or not
-   %%%                      at the end of input text parsing
-   %%%
-   %%% Returns a prediction candidate if found, nil otherwise
-   %%%
-
-
-   %%%
-   %%% Parses a line and retrieves the word after the entered text if the latter is in the line
-   %%%      Line:           Line to parse
-   %%%      InputTextSplit: Input text to look for
-   %%%      Found:          Whether a start of match has been found, used to determine if the function found a prediction candidate or not
-   %%%                      at the end of input text parsing
-   %%%
-   %%% Returns a prediction candidate if found, nil otherwise
-   %%%
-
 
    %%%
    %%% Parses a line and retrieves the word after the entered text if the latter is in the line
@@ -240,28 +201,11 @@ define
       nil then true
       [] H|T then
          if H.1 == Char then false 
-         if H.1 == Char then false 
          else
-            {DoesntMatch Char T} 
             {DoesntMatch Char T} 
          end 
       end 
    end
-
-   %%%
-   %%% Strips ponctuation symbols from given String
-   %%%      Str: String to strip ponctuation from
-   %%%
-   %%% Returns truncated String
-   %%%
-
-
-   %%%
-   %%% Strips ponctuation symbols from given String
-   %%%      Str: String to strip ponctuation from
-   %%%
-   %%% Returns truncated String
-   %%%
 
 
    %%%
@@ -273,8 +217,6 @@ define
 
    fun {StripPonctuation Str}
       local Ponctuation in 
-         Ponctuation = ["!" "?" ";" "," "." ":"]
-         {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
          Ponctuation = ["!" "?" ";" "," "." ":"]
          {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
       end
@@ -290,7 +232,7 @@ define
    %%% Returns computed prediction record
    %%%
 
-   fun {ParseFile Path File Line Struct InputTextSplit} 
+   fun {ParseFile File Line Struct InputTextSplit} 
       local AtEnd ReadLine Prediction NewTree in 
          Prediction = {ParseLine {List.map {String.tokens {StripPonctuation Line} & } Lower} InputTextSplit false}
          NewTree = {UpdatePredictionTree Struct Prediction}
@@ -298,22 +240,10 @@ define
          if AtEnd then NewTree
          else 
             {File getS(ReadLine)} 
-            {ParseFile Path File ReadLine NewTree InputTextSplit}
+            {ParseFile File ReadLine NewTree InputTextSplit}
          end
       end
    end
-
-   %%%
-   %%% Computes a record mapping a prediction with its frequency after input in the given files
-   %%%      Files:          Array of files to read
-   %%%      StartIndex:     Index of the first file to read (included)
-   %%%      EndIndex:       Index of the last file to read  (excluded)
-   %%%      CurrentIndex:   Currently read file index
-   %%%      Struct:         Up to now computed prediction record
-   %%%      InputTextSplit: Array of words from user input
-   %%%
-   %%% Returns computed prediction record
-   %%%
 
    %%%
    %%% Computes a record mapping a prediction with its frequency after input in the given files
@@ -349,27 +279,13 @@ define
    %%% Returns reduced array with size NGram 
    %%%
 
-   %%%
-   %%% Reduces amount of words in the input to NGram 
-   %%%   InputTextSplit: Arrays of words
-   %%%
-   %%% Returns reduced array with size NGram 
-   %%%
-
    fun {NgramInput InputTextSplit}
       if {Length InputTextSplit} =< NGram then InputTextSplit
       else 
          {NgramInput InputTextSplit.2}
       end
    end
-
-   %%%
-   %%% Strips last N characters at the end of a String 
-   %%%   S:     String to strip chars from
-   %%%   NChar: Amount of characters to strip
-   %%%
-   %%% Returns truncated string
-   %%%
+   
 
    %%%
    %%% Strips last N characters at the end of a String 
@@ -391,17 +307,6 @@ define
    in 
       {List.reverse {StringFirstChar {List.reverse S} NChar}}
    end
-
-   %%%
-   %%% Recursively launches N threads 
-   %%%   Input:         Array of words of the user-input text
-   %%%   Port:          Port to send computing result to
-   %%%   First:         Whether it is the first thread to be launched (used to add last files if {Length Files} mod N != 0)
-   %%%   N:             Thread number (counting from N to 0)
-   %%%   Xn:            Variable bound when thread terminates, used to know when all threads are terminated
-   %%%   Files:         Array of files to read
-   %%%   FilePerThread: Amount of file to read per thread
-   %%%
 
    %%%
    %%% Recursively launches N threads 
@@ -471,26 +376,26 @@ define
       % {ListAllFiles {OS.getDir TweetsFolder}}
        
       local NbThreads Description Window SeparatedWordsStream B in
-	   {Property.put print foo(width:1000 depth:1000)}  
-	 
-      % Creation de l interface graphique
-	   Description=td(
-			title: "Text predictor"
-			lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
-			text(handle:OutputText width:50 height:10 background:black foreground:white glue:w wrap:word)
-			action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
-			)
-	 
-      % Creation de la fenetre
-	   Window={QTk.build Description}
-	   {Window show}
-	 
-	   {InputText tk(insert 'end' "Loading... Please wait.")}
-	   {InputText bind(event:"<Control-s>" action:proc{$} X in X = {Press} end)} % You can also bind events
-      {InputText bind(event:"<Escape>" action:proc{$}{Application.exit 0} end)}
-      {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
-	 
-	   {InputText set(1:{StripPonctuation "."})}
+         {Property.put print foo(width:1000 depth:1000)}  
+      
+         % Creation de l interface graphique
+         Description=td(
+            title: "Text predictor"
+            lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
+            text(handle:OutputText width:50 height:10 background:black foreground:white glue:w wrap:word)
+            action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
+            )
+      
+         % Creation de la fenetre
+         Window={QTk.build Description}
+         {Window show}
+      
+         {InputText tk(insert 'end' "Loading... Please wait.")}
+         {InputText bind(event:"<Control-s>" action:proc{$} X in X = {Press} end)} % You can also bind events
+         {InputText bind(event:"<Escape>" action:proc{$}{Application.exit 0} end)}
+         {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
+      
+         {InputText set(1:{StripPonctuation "."})}
       end
    end
    {Main}
