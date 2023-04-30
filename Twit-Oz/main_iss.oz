@@ -375,17 +375,19 @@ define
       %%% soumission !!!
       % {ListAllFiles {OS.getDir TweetsFolder}}
        
-      local NbThreads Description Window SeparatedWordsStream B in
+      local NbThreads Description Window SeparatedWordsStream PW PH in
          {Property.put print foo(width:1000 depth:1000)}  
-      
          % Creation de l interface graphique
          Description=td(
             title: "Text predictor"
-            lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
+            % winfo(height:PH)
+            lr(text(handle:InputText width:10 height:10 background:white foreground:black wrap:word) 
+               button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
             text(handle:OutputText width:50 height:10 background:black foreground:white glue:w wrap:word)
             action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
             )
-      
+         
+         
          % Creation de la fenetre
          Window={QTk.build Description}
          {Window show}
