@@ -288,24 +288,24 @@ define
    
 
    %%%
-   %%% Strips last N characters at the end of a String 
+   %%% Strips last characters at the end of a String that are useless for the search
    %%%   S:     String to strip chars from
-   %%%   NChar: Amount of characters to strip
    %%%
    %%% Returns truncated string
    %%%
 
-   fun {StripLastChar S NChar} 
-      fun {StringFirstChar Str NFchar}
-         if NFchar =< 0 then Str 
-         else
-            case Str of nil then nil
-            [] H|T then {StringFirstChar T NFchar-1}
+   fun {StripLastChar S} 
+      fun {StringFirstChar Str}
+         case Str of nil then nil
+         [] H|T then 
+            if H == 32 then {StringFirstChar T}
+            elseif H == 10 then {StringFirstChar T}
+            else Str 
             end
          end
       end
    in 
-      {List.reverse {StringFirstChar {List.reverse S} NChar}}
+      {List.reverse {StringFirstChar {List.reverse S}}}
    end
 
    %%%
@@ -347,7 +347,7 @@ define
          FilePerThread = {Length Files} div N
          Xn = unit
          {InputText get(Content)}
-         Input = {NgramInput {List.map {String.tokens {StripLastChar Content 1} & } Lower}}
+         Input = {NgramInput {List.map {String.tokens {StripLastChar Content} & } Lower}} %{StripLastChar Content 1} & } Lower}}
          {Browse {List.map Input String.toAtom}}
          {LaunchThread Input Port true N Xn Files FilePerThread}
       end
@@ -381,7 +381,7 @@ define
          Description=td(
             title: "Text predictor"
             % winfo(height:PH)
-            lr(text(handle:InputText width:10 height:10 background:white foreground:black wrap:word) 
+            lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) 
                button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
             text(handle:OutputText width:50 height:10 background:black foreground:white glue:w wrap:word)
             action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
