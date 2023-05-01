@@ -57,7 +57,11 @@ define
 
    fun {GetBestPrediction Tree Arity BestPrediction BestFrequency}
       case Arity of 
-      nil then BestPrediction 
+      nil then Return in
+         if BestPrediction == '' then Return = [[nil] BestFrequency]
+         else 
+            Return = [[BestPrediction] [{Int.toFloat BestFrequency}]]
+         end
       [] H|T then
          if Tree.H > BestFrequency then {GetBestPrediction Tree T H Tree.H}  
          else 
@@ -128,8 +132,12 @@ define
          TempPredictionTree = prediction()
          PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
          BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
-         if BestPrediction == '' then Return = "Not Found" else Return = BestPrediction end
+         if BestPrediction.2 == [0] then Return = "Not Found" 
+         else 
+            Return = BestPrediction 
+         end
          {OutputText set(Return)}
+         {Browse BestPrediction}
          0
       end
    end
@@ -217,7 +225,7 @@ define
 
    fun {StripPonctuation Str}
       local Ponctuation in 
-         Ponctuation = ["!" "?" ";" "," "." ":"]
+         Ponctuation = ["!" "?" ";" "," "." ":" "'" "-" "_"]
          {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
       end
    end
