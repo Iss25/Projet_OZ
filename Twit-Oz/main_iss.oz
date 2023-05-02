@@ -215,6 +215,16 @@ define
       end 
    end
 
+   fun {SpecialToSpace List MatchList ResList}
+      case List of
+      nil then ResList|nil
+      [] H|T then
+         if {DoesntMatch H MatchList} then {SpecialToSpace T MatchList [ResList|H]}
+         else 
+            {SpecialToSpace T MatchList [ResList|' ']}
+         end
+      end 
+   end
 
    %%%
    %%% Strips ponctuation symbols from given String
@@ -224,9 +234,11 @@ define
    %%%
 
    fun {StripPonctuation Str}
-      local Ponctuation in 
+      local Ponctuation Res in 
          Ponctuation = ["!" "?" ";" "," "." ":" "'" "-" "_"]
          {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
+         %Res = []
+         %{SpecialToSpace Str Ponctuation Res}
       end
    end
 
