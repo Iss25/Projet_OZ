@@ -208,7 +208,8 @@ define
       case MatchList of 
       nil then true
       [] H|T then
-         if H.1 == Char then false 
+         %if H.1 == Char then false 
+         if H.1 \= Char then false 
          else
             {DoesntMatch Char T} 
          end 
@@ -217,11 +218,11 @@ define
 
    fun {SpecialToSpace List MatchList ResList}
       case List of
-      nil then ResList|nil
+      nil then ResList
       [] H|T then
-         if {DoesntMatch H MatchList} then {SpecialToSpace T MatchList [ResList|H]}
+         if {DoesntMatch H MatchList} then {SpecialToSpace T MatchList H}
          else 
-            {SpecialToSpace T MatchList [ResList|' ']}
+            {SpecialToSpace T MatchList H}
          end
       end 
    end
@@ -234,11 +235,12 @@ define
    %%%
 
    fun {StripPonctuation Str}
-      local Ponctuation Res in 
-         Ponctuation = ["!" "?" ";" "," "." ":" "'" "-" "_"]
-         {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
-         %Res = []
-         %{SpecialToSpace Str Ponctuation Res}
+      local Ponctuation Alphabet Res in 
+         Ponctuation = ["," "." ":" "'" "-"] %"!" "?" ";" "_"
+         Alphabet = ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"]
+         %{List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
+         Res = nil
+         {SpecialToSpace Str Alphabet Res}
       end
    end
 
@@ -367,7 +369,7 @@ define
          FilePerThread = {Length Files} div N
          Xn = unit
          {InputText get(Content)}
-         Input = {NgramInput {List.map {String.tokens {StripLastChar Content} & } Lower}} %{StripLastChar Content 1} & } Lower}}
+         Input = {NgramInput {List.map {String.tokens {StripLastChar Content} & } Lower}}
          {Browse {List.map Input String.toAtom}}
          {LaunchThread Input Port true N Xn Files FilePerThread}
       end
@@ -403,7 +405,7 @@ define
             % winfo(height:PH)
             lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) 
                button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
-            text(handle:OutputText width:50 height:10 background:black foreground:white glue:w wrap:word)
+            text(handle:OutputText width:50 height:10 background:black foreground:white glue:nw wrap:word)
             action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
             )
          
@@ -417,7 +419,7 @@ define
          {InputText bind(event:"<Escape>" action:proc{$}{Application.exit 0} end)}
          {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
       
-         {InputText set(1:{StripPonctuation "."})}
+         {InputText set(1:"")}
       end
    end
    {Main}
