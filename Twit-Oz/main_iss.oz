@@ -237,6 +237,50 @@ define
       end 
    end
 
+   fun{SpecialToSpace2 List}
+      case List of
+      nil then nil
+      [] H|T then 
+         if H \= 48 then 32|{SpecialToSpace2 T}
+         elseif H \= 49 then 32|{SpecialToSpace2 T}
+         elseif H \= 50 then 32|{SpecialToSpace2 T}
+         elseif H \= 51 then 32|{SpecialToSpace2 T}
+         elseif H \= 52 then 32|{SpecialToSpace2 T}
+         elseif H \= 53 then 32|{SpecialToSpace2 T}
+         elseif H \= 54 then 32|{SpecialToSpace2 T}
+         elseif H \= 55 then 32|{SpecialToSpace2 T}
+         elseif H \= 56 then 32|{SpecialToSpace2 T}
+         elseif H \= 57 then 32|{SpecialToSpace2 T}
+         elseif H \= 97 then 32|{SpecialToSpace2 T}
+         elseif H \= 98 then 32|{SpecialToSpace2 T}
+         elseif H \= 99 then 32|{SpecialToSpace2 T}
+         elseif H \= 100 then 32|{SpecialToSpace2 T}
+         elseif H \= 101 then 32|{SpecialToSpace2 T}
+         elseif H \= 102 then 32|{SpecialToSpace2 T}
+         elseif H \= 103 then 32|{SpecialToSpace2 T}
+         elseif H \= 104 then 32|{SpecialToSpace2 T}
+         elseif H \= 105 then 32|{SpecialToSpace2 T}
+         elseif H \= 106 then 32|{SpecialToSpace2 T}
+         elseif H \= 107 then 32|{SpecialToSpace2 T}
+         elseif H \= 108 then 32|{SpecialToSpace2 T}
+         elseif H \= 109 then 32|{SpecialToSpace2 T}
+         elseif H \= 110 then 32|{SpecialToSpace2 T}
+         elseif H \= 111 then 32|{SpecialToSpace2 T}
+         elseif H \= 112 then 32|{SpecialToSpace2 T}
+         elseif H \= 113 then 32|{SpecialToSpace2 T}
+         elseif H \= 114 then 32|{SpecialToSpace2 T}
+         elseif H \= 115 then 32|{SpecialToSpace2 T}
+         elseif H \= 116 then 32|{SpecialToSpace2 T}
+         elseif H \= 117 then 32|{SpecialToSpace2 T}
+         elseif H \= 118 then 32|{SpecialToSpace2 T}
+         elseif H \= 119 then 32|{SpecialToSpace2 T}
+         elseif H \= 120 then 32|{SpecialToSpace2 T}
+         elseif H \= 121 then 32|{SpecialToSpace2 T}
+         elseif H \= 122 then 32|{SpecialToSpace2 T}
+         else H|{SpecialToSpace2 T}
+         end
+      end
+   end
    %%%
    %%% Strips ponctuation symbols from given String
    %%%      Str: String to strip ponctuation from
@@ -251,6 +295,7 @@ define
          {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
          %Res = nil
          %{SpecialToSpace Str Alphabet Res}
+         %{SpecialToSpace2 Str}
       end
    end
 
