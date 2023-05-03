@@ -151,7 +151,7 @@ define
    %%%
 
    fun {Lower Word}
-       {List.map Word Char.toLower}
+      {List.map Word Char.toLower}
    end
 
    %%%
@@ -208,10 +208,20 @@ define
       case MatchList of 
       nil then true
       [] H|T then
-         %if H.1 == Char then false 
-         if H.1 \= Char then false 
+         if H.1 == Char then false
          else
             {DoesntMatch Char T} 
+         end 
+      end 
+   end
+
+   fun {DoesntMatch2 Char MatchList}
+      case MatchList of 
+      nil then false %true
+      [] H|T then
+         if H.1 == Char then true %false
+         else
+            {DoesntMatch2 Char T} 
          end 
       end 
    end
@@ -220,9 +230,9 @@ define
       case List of
       nil then ResList
       [] H|T then
-         if {DoesntMatch H MatchList} then {SpecialToSpace T MatchList H}
+         if {DoesntMatch2 H MatchList} then {SpecialToSpace T MatchList H|ResList}
          else 
-            {SpecialToSpace T MatchList H}
+            {SpecialToSpace T MatchList 32|ResList}
          end
       end 
    end
@@ -237,10 +247,10 @@ define
    fun {StripPonctuation Str}
       local Ponctuation Alphabet Res in 
          Ponctuation = ["," "." ":" "'" "-"] %"!" "?" ";" "_"
-         Alphabet = ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"]
-         %{List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
-         Res = nil
-         {SpecialToSpace Str Alphabet Res}
+         Alphabet = ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" " "]
+         {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
+         %Res = nil
+         %{SpecialToSpace Str Alphabet Res}
       end
    end
 
