@@ -20,8 +20,6 @@ define
       {Browser.browse Buf}
    end
 
-   InputText 
-   OutputText
    NbThreads = 500
 
    %%% -------------   TODO ---------------------
@@ -63,7 +61,8 @@ define
             Return = [[BestPrediction] [{Int.toFloat BestFrequency}]]
          end
       [] H|T then
-         if Tree.H > BestFrequency then {GetBestPrediction Tree T H Tree.H}  
+         if Tree.H > BestFrequency then {GetBestPrediction Tree T H Tree.H}
+         elseif Tree.H == BestFrequency then {GetBestPrediction Tree T {VirtualString.toString (H#' '#BestPrediction)} BestFrequency}  
          else 
             {GetBestPrediction Tree T BestPrediction BestFrequency}
          end    
@@ -134,7 +133,7 @@ define
          BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
          if BestPrediction.2 == [0] then Return = "Not Found" 
          else 
-            Return = BestPrediction 
+            Return = BestPrediction %{Value.toVirtualString BestPrediction} 
          end
          {OutputText set(Return)}
          {Browse BestPrediction}
@@ -281,6 +280,16 @@ define
          end
       end
    end
+
+   fun{SpecialToSpace3 MatchList Char}
+      case MatchList of
+      nil then Char
+      [] H|T then 
+         if H == Char then {String.replace Char H 32}
+         else {SpecialToSpace3 T Char}
+         end
+      end
+   end
    %%%
    %%% Strips ponctuation symbols from given String
    %%%      Str: String to strip ponctuation from
@@ -290,12 +299,13 @@ define
 
    fun {StripPonctuation Str}
       local Ponctuation Alphabet Res in 
-         Ponctuation = ["," "." ":" "'" "-"] %"!" "?" ";" "_"
+         Ponctuation = ["," "." ":" "'" "-" "!" "?" ";" "_"]
          Alphabet = ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" " "]
-         {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
+         %{List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
          %Res = nil
          %{SpecialToSpace Str Alphabet Res}
          %{SpecialToSpace2 Str}
+         {SpecialToSpace3 Ponctuation Str}
       end
    end
 
@@ -424,6 +434,7 @@ define
          FilePerThread = {Length Files} div N
          Xn = unit
          {InputText get(Content)}
+         {InputText set({StripLastChar Content})}
          Input = {NgramInput {List.map {String.tokens {StripLastChar Content} & } Lower}}
          {Browse {List.map Input String.toAtom}}
          {LaunchThread Input Port true N Xn Files FilePerThread}
