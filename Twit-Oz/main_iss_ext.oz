@@ -10,7 +10,7 @@ import
 define
    InputText 
    OutputText
-   NGram = 4
+   InfoGram
    %%% Pour ouvrir les fichiers
    class TextFile
       from Open.file Open.text
@@ -367,9 +367,12 @@ define
    %%%
 
    fun {NgramInput InputTextSplit}
-      if {Length InputTextSplit} =< NGram then InputTextSplit
-      else 
-         {NgramInput InputTextSplit.2}
+      local Number in
+         {InfoGram get(Number)}
+         if {Length InputTextSplit} =< {String.toInt Number} then InputTextSplit
+         else 
+            {NgramInput InputTextSplit.2}
+         end
       end
    end
    
@@ -441,7 +444,21 @@ define
       end
    end
    
+   proc {Increase}
+      local Inc in 
+         {InfoGram get(Inc)}
+         {InfoGram set(1:{Int.toString {String.toInt Inc}+1})}
+      end
+   end
 
+   proc {Decrease}
+      local Dec in 
+         {InfoGram get(Dec)}
+         if Dec == "1" then {InfoGram set(1:Dec)}
+         else {InfoGram set(1:{Int.toString {String.toInt Dec}-1})}
+         end
+      end
+   end
 
    %%% Fetch Tweets Folder from CLI Arguments
    %%% See the Makefile for an example of how it is called
@@ -468,10 +485,12 @@ define
          % Creation de l interface graphique
          Description=td(
             title: "Text predictor"
-            % winfo(height:PH)
             lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) 
                button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
             text(handle:OutputText width:50 height:10 background:black foreground:white glue:nw wrap:word)
+            lr(text(handle:InfoGram width:15 height:5 background:red wrap:word)
+               button(text:"+" width:15 action: Increase)
+               button(text:"-" width:15 action: Decrease))
             action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
             )
          
@@ -486,6 +505,7 @@ define
          {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
       
          {InputText set(1:"")}
+         {InfoGram set(1:"4")}
       end
    end
    {Main}
