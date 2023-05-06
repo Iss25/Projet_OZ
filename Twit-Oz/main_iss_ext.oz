@@ -11,6 +11,9 @@ define
    InputText 
    OutputText
    InfoGram
+   TitleGram  
+   LenOut
+   TitleLenOut
    %%% Pour ouvrir les fichiers
    class TextFile
       from Open.file Open.text
@@ -444,18 +447,34 @@ define
       end
    end
    
-   proc {Increase}
+   proc {IncreaseGram}
       local Inc in 
          {InfoGram get(Inc)}
          {InfoGram set(1:{Int.toString {String.toInt Inc}+1})}
       end
    end
 
-   proc {Decrease}
+   proc {DecreaseGram}
       local Dec in 
          {InfoGram get(Dec)}
          if Dec == "1" then {InfoGram set(1:Dec)}
          else {InfoGram set(1:{Int.toString {String.toInt Dec}-1})}
+         end
+      end
+   end
+
+   proc {IncreaseLen}
+      local Inc in 
+         {LenOut get(Inc)}
+         {LenOut set(1:{Int.toString {String.toInt Inc}+1})}
+      end
+   end
+
+   proc {DecreaseLen}
+      local Dec in 
+         {LenOut get(Dec)}
+         if Dec == "1" then {LenOut set(1:Dec)}
+         else {LenOut set(1:{Int.toString {String.toInt Dec}-1})}
          end
       end
    end
@@ -480,7 +499,7 @@ define
       %%% soumission !!!
       % {ListAllFiles {OS.getDir TweetsFolder}}
        
-      local NbThreads Description Window SeparatedWordsStream PW PH in
+      local NbThreads Description Window SeparatedWordsStream in
          {Property.put print foo(width:1000 depth:1000)}  
          % Creation de l interface graphique
          Description=td(
@@ -488,9 +507,14 @@ define
             lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) 
                button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
             text(handle:OutputText width:50 height:10 background:black foreground:white glue:nw wrap:word)
-            lr(text(handle:InfoGram width:15 height:5 background:red wrap:word)
-               button(text:"+" width:15 action: Increase)
-               button(text:"-" width:15 action: Decrease))
+            lr(text(handle:TitleGram width:20 height:1 background:white foreground:black glue:nw wrap:word)
+               button(text:"-" width:8 glue:nw action: DecreaseGram)
+               text(handle:InfoGram width:11 height:1 background:white foreground:black glue:nw wrap:word)
+               button(text:"+" width:8 glue:nw action: IncreaseGram) glue:nw)
+            lr(text(handle:TitleLenOut width:25 height:1 background:white foreground:black glue:nw wrap:word)
+               button(text:"-" width:8 glue:nw action: DecreaseLen)
+               text(handle:LenOut width:6 height:1 background:white foreground:black glue:nw wrap:word)
+               button(text:"+" width:8 glue:nw action: IncreaseLen) glue:nw)
             action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
             )
          
@@ -506,6 +530,9 @@ define
       
          {InputText set(1:"")}
          {InfoGram set(1:"4")}
+         {TitleGram set("Choose N for N-Gram:")}
+         {LenOut set(1:"1")}
+         {TitleLenOut set("Choose length of output:")}
       end
    end
    {Main}
