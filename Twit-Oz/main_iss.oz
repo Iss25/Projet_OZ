@@ -10,7 +10,7 @@ import
 define
    InputText 
    OutputText
-   NGram = 4
+   NGram = 15
    %%% Pour ouvrir les fichiers
    class TextFile
       from Open.file Open.text
@@ -203,114 +203,22 @@ define
    %%% Returns false if Char is not present in Matchlist, true otherwise
    %%% 
 
-   fun {DoesntMatch Char MatchList}
-      case MatchList of 
-      nil then true
-      [] H|T then
-         if H.1 == Char then false
-         else
-            {DoesntMatch Char T} 
-         end 
-      end 
-   end
-
-   fun {DoesntMatch2 Char MatchList}
-      case MatchList of 
-      nil then false %true
-      [] H|T then
-         if H.1 == Char then true %false
-         else
-            {DoesntMatch2 Char T} 
-         end 
-      end 
-   end
-
-   fun {SpecialToSpace List MatchList ResList}
-      case List of
-      nil then ResList
-      [] H|T then
-         if {DoesntMatch2 H MatchList} then {SpecialToSpace T MatchList H|ResList}
-         else 
-            {SpecialToSpace T MatchList 32|ResList}
-         end
-      end 
-   end
-
-   fun{SpecialToSpace2 List}
-      case List of
-      nil then nil
-      [] H|T then 
-         if H \= 48 then 32|{SpecialToSpace2 T}
-         elseif H \= 49 then 32|{SpecialToSpace2 T}
-         elseif H \= 50 then 32|{SpecialToSpace2 T}
-         elseif H \= 51 then 32|{SpecialToSpace2 T}
-         elseif H \= 52 then 32|{SpecialToSpace2 T}
-         elseif H \= 53 then 32|{SpecialToSpace2 T}
-         elseif H \= 54 then 32|{SpecialToSpace2 T}
-         elseif H \= 55 then 32|{SpecialToSpace2 T}
-         elseif H \= 56 then 32|{SpecialToSpace2 T}
-         elseif H \= 57 then 32|{SpecialToSpace2 T}
-         elseif H \= 97 then 32|{SpecialToSpace2 T}
-         elseif H \= 98 then 32|{SpecialToSpace2 T}
-         elseif H \= 99 then 32|{SpecialToSpace2 T}
-         elseif H \= 100 then 32|{SpecialToSpace2 T}
-         elseif H \= 101 then 32|{SpecialToSpace2 T}
-         elseif H \= 102 then 32|{SpecialToSpace2 T}
-         elseif H \= 103 then 32|{SpecialToSpace2 T}
-         elseif H \= 104 then 32|{SpecialToSpace2 T}
-         elseif H \= 105 then 32|{SpecialToSpace2 T}
-         elseif H \= 106 then 32|{SpecialToSpace2 T}
-         elseif H \= 107 then 32|{SpecialToSpace2 T}
-         elseif H \= 108 then 32|{SpecialToSpace2 T}
-         elseif H \= 109 then 32|{SpecialToSpace2 T}
-         elseif H \= 110 then 32|{SpecialToSpace2 T}
-         elseif H \= 111 then 32|{SpecialToSpace2 T}
-         elseif H \= 112 then 32|{SpecialToSpace2 T}
-         elseif H \= 113 then 32|{SpecialToSpace2 T}
-         elseif H \= 114 then 32|{SpecialToSpace2 T}
-         elseif H \= 115 then 32|{SpecialToSpace2 T}
-         elseif H \= 116 then 32|{SpecialToSpace2 T}
-         elseif H \= 117 then 32|{SpecialToSpace2 T}
-         elseif H \= 118 then 32|{SpecialToSpace2 T}
-         elseif H \= 119 then 32|{SpecialToSpace2 T}
-         elseif H \= 120 then 32|{SpecialToSpace2 T}
-         elseif H \= 121 then 32|{SpecialToSpace2 T}
-         elseif H \= 122 then 32|{SpecialToSpace2 T}
-         else H|{SpecialToSpace2 T}
-         end
-      end
-   end
-
-   fun{SpecialToSpace3 MatchList Char}
-      case MatchList of
-      nil then Char
-      [] H|T then 
-         if H == Char then {String.replace Char H 32}
-         else {SpecialToSpace3 T Char}
-         end
-      end
-   end
-
-   fun{Match MatchList Char}
-      case MatchList of
-      nil then false 
-      [] H|T then 
-         if H.1 == Char then true
-         else {Match T Char}
-         end
-      end
-   end
-
-   fun{SpecialToSpace4 MatchList List ResList}
+   fun{SpecialToSpace List ResList}
       case List of
       nil then ResList
       [] H|T then 
-         if {Match MatchList H} then {SpecialToSpace4 MatchList T H|ResList}
+         if H < 48 then {SpecialToSpace T 32|ResList}
+         elseif H > 122 then {SpecialToSpace T 32|ResList}
          else 
-            {SpecialToSpace4 MatchList T 32|ResList}
+            if H > 96 then {SpecialToSpace T H|ResList}
+            elseif H < 58 then {SpecialToSpace T H|ResList}
+            else 
+               {SpecialToSpace T 32|ResList}
+            end
          end
       end
    end
+
 
    %%%
    %%% Strips ponctuation symbols from given String
@@ -320,15 +228,9 @@ define
    %%%
 
    fun {StripPonctuation Str}
-      local Ponctuation Alphabet Res in 
-         Ponctuation = ["," "." ":" "'" "-" "!" "?" ";" "_"]
-         Alphabet = ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" " "]
-         %{List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
+      local Res in
          Res = nil
-         %{SpecialToSpace Str Alphabet Res}
-         %{SpecialToSpace2 Str}
-         %{SpecialToSpace3 Ponctuation Str}
-         {List.reverse {SpecialToSpace4 Alphabet Str Res}}
+         {List.reverse {SpecialToSpace Str Res}}
       end
    end
 
@@ -344,7 +246,7 @@ define
 
    fun {ParseFile File Line Struct InputTextSplit} 
       local AtEnd ReadLine Prediction NewTree in 
-         Prediction = {ParseLine {List.map {String.tokens {StripPonctuation Line} & } Lower} InputTextSplit false}
+         Prediction = {ParseLine {String.tokens {StripPonctuation {Lower Line}} & } InputTextSplit false}
          NewTree = {UpdatePredictionTree Struct Prediction}
          {File atEnd(AtEnd)}
          if AtEnd then NewTree
