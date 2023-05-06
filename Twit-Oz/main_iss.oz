@@ -20,7 +20,7 @@ define
       {Browser.browse Buf}
    end
 
-   NbThreads = 208
+   NbThreads = 500
 
    %%%
    %%% Computes best prediction based on the pairs of prediction-frequency present in the record
@@ -112,7 +112,7 @@ define
          BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
          if BestPrediction.2 == [0] then Return = "Not Found" 
          else 
-            Return = BestPrediction %{Value.toVirtualString BestPrediction} 
+            Return = BestPrediction
          end
          {OutputText set(Return)}
          {Browse BestPrediction}
