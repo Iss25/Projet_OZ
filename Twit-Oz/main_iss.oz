@@ -306,7 +306,8 @@ define
       nil then ResList
       [] H|T then 
          if {Match MatchList H} then {SpecialToSpace4 MatchList T H|ResList}
-         else {SpecialToSpace4 MatchList T 32|ResList}
+         else 
+            {SpecialToSpace4 MatchList T 32|ResList}
          end
       end
    end
@@ -321,13 +322,13 @@ define
    fun {StripPonctuation Str}
       local Ponctuation Alphabet Res in 
          Ponctuation = ["," "." ":" "'" "-" "!" "?" ";" "_"]
-         Alphabet = ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"] % "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" " "]
+         Alphabet = ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" " "]
          %{List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
          Res = nil
          %{SpecialToSpace Str Alphabet Res}
          %{SpecialToSpace2 Str}
          %{SpecialToSpace3 Ponctuation Str}
-         {SpecialToSpace4 Alphabet Str Res}
+         {List.reverse {SpecialToSpace4 Alphabet Str Res}}
       end
    end
 
