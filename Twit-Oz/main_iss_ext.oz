@@ -450,7 +450,9 @@ define
    proc {IncreaseGram}
       local Inc in 
          {InfoGram get(Inc)}
+         {InfoGram set(state:normal)}
          {InfoGram set(1:{Int.toString {String.toInt Inc}+1})}
+         {InfoGram set(state:disabled)}
       end
    end
 
@@ -458,7 +460,10 @@ define
       local Dec in 
          {InfoGram get(Dec)}
          if Dec == "1" then {InfoGram set(1:Dec)}
-         else {InfoGram set(1:{Int.toString {String.toInt Dec}-1})}
+         else 
+            {InfoGram set(state:normal)}
+            {InfoGram set(1:{Int.toString {String.toInt Dec}-1})}
+            {InfoGram set(state:disabled)}
          end
       end
    end
@@ -466,7 +471,9 @@ define
    proc {IncreaseLen}
       local Inc in 
          {LenOut get(Inc)}
+         {LenOut set(state:normal)}
          {LenOut set(1:{Int.toString {String.toInt Inc}+1})}
+         {LenOut set(state:disabled)}
       end
    end
 
@@ -474,7 +481,10 @@ define
       local Dec in 
          {LenOut get(Dec)}
          if Dec == "1" then {LenOut set(1:Dec)}
-         else {LenOut set(1:{Int.toString {String.toInt Dec}-1})}
+         else 
+            {LenOut set(state:normal)}
+            {LenOut set(1:{Int.toString {String.toInt Dec}-1})}
+            {LenOut set(state:disabled)}
          end
       end
    end
@@ -529,10 +539,18 @@ define
          {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
       
          {InputText set(1:"")}
+
          {InfoGram set(1:"4")}
+         {InfoGram set(state:disabled)}
+
          {TitleGram set("Choose N for N-Gram:")}
+         {TitleGram set(state:disabled)}
+
          {LenOut set(1:"1")}
+         {LenOut set(state:disabled)}
+
          {TitleLenOut set("Choose length of output:")}
+         {TitleLenOut set(state:disabled)}
       end
    end
    {Main}
