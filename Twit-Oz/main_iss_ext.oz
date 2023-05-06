@@ -23,28 +23,7 @@ define
       {Browser.browse Buf}
    end
 
-   NbThreads = 500
-
-   %%% -------------   TODO ---------------------
-
-   %%% /!\ Fonction testee /!\
-   %%% @pre : les threads sont "ready"
-   %%% @post: Fonction appellee lorsqu on appuie sur le bouton de prediction
-   %%%        Affiche la prediction la plus probable du prochain mot selon les deux derniers mots entres
-   %%% @return: Retourne une liste contenant la liste du/des mot(s) le(s) plus probable(s) accompagnee de 
-   %%%          la probabilite/frequence la plus elevee. 
-   %%%          La valeur de retour doit prendre la forme:
-   %%%                  <return_val> := <most_probable_words> '|' <probability/frequence> '|' nil
-   %%%                  <most_probable_words> := <atom> '|' <most_probable_words> 
-   %%%                                           | nil
-   %%%                  <probability/frequence> := <int> | <float>
-
-   %%% A QUOI ÇA SERT ??! (à lire avec la voix de Deville) 
-   
-   %%% -------------   TODO ---------------------
-
-
-
+   NbThreads = 208
 
    %%%
    %%% Computes best prediction based on the pairs of prediction-frequency present in the record
@@ -199,118 +178,45 @@ define
    
 
    %%%
-   %%% Check if the character is not present in the given List
-   %%%      Char:      Character to check presence
-   %%%      MatchList: List of characters to check equality with Char
+   %%% Check in the List if each character is a letter of an number if else replace by a space
+   %%%      List: List of the character to check if it's acceptable
+   %%%      ResList: Accumulator that contains the filtered list
    %%%
-   %%% Returns false if Char is not present in Matchlist, true otherwise
+   %%% Returns ResList when List is nil
    %%% 
 
-   fun {DoesntMatch Char MatchList}
-      case MatchList of 
-      nil then true
-      [] H|T then
-         if H.1 == Char then false
-         else
-            {DoesntMatch Char T} 
-         end 
-      end 
-   end
-
-   fun {DoesntMatch2 Char MatchList}
-      case MatchList of 
-      nil then false %true
-      [] H|T then
-         if H.1 == Char then true %false
-         else
-            {DoesntMatch2 Char T} 
-         end 
-      end 
-   end
-
-   fun {SpecialToSpace List MatchList ResList}
+   fun{SpecialToSpace List ResList}
       case List of
       nil then ResList
-      [] H|T then
-         if {DoesntMatch2 H MatchList} then {SpecialToSpace T MatchList H|ResList}
+      [] H|T then 
+         if H < 48 then {SpecialToSpace T 32|ResList}
+         elseif H > 122 then {SpecialToSpace T 32|ResList}
          else 
-            {SpecialToSpace T MatchList 32|ResList}
-         end
-      end 
-   end
-
-   fun{SpecialToSpace2 List}
-      case List of
-      nil then nil
-      [] H|T then 
-         if H \= 48 then 32|{SpecialToSpace2 T}
-         elseif H \= 49 then 32|{SpecialToSpace2 T}
-         elseif H \= 50 then 32|{SpecialToSpace2 T}
-         elseif H \= 51 then 32|{SpecialToSpace2 T}
-         elseif H \= 52 then 32|{SpecialToSpace2 T}
-         elseif H \= 53 then 32|{SpecialToSpace2 T}
-         elseif H \= 54 then 32|{SpecialToSpace2 T}
-         elseif H \= 55 then 32|{SpecialToSpace2 T}
-         elseif H \= 56 then 32|{SpecialToSpace2 T}
-         elseif H \= 57 then 32|{SpecialToSpace2 T}
-         elseif H \= 97 then 32|{SpecialToSpace2 T}
-         elseif H \= 98 then 32|{SpecialToSpace2 T}
-         elseif H \= 99 then 32|{SpecialToSpace2 T}
-         elseif H \= 100 then 32|{SpecialToSpace2 T}
-         elseif H \= 101 then 32|{SpecialToSpace2 T}
-         elseif H \= 102 then 32|{SpecialToSpace2 T}
-         elseif H \= 103 then 32|{SpecialToSpace2 T}
-         elseif H \= 104 then 32|{SpecialToSpace2 T}
-         elseif H \= 105 then 32|{SpecialToSpace2 T}
-         elseif H \= 106 then 32|{SpecialToSpace2 T}
-         elseif H \= 107 then 32|{SpecialToSpace2 T}
-         elseif H \= 108 then 32|{SpecialToSpace2 T}
-         elseif H \= 109 then 32|{SpecialToSpace2 T}
-         elseif H \= 110 then 32|{SpecialToSpace2 T}
-         elseif H \= 111 then 32|{SpecialToSpace2 T}
-         elseif H \= 112 then 32|{SpecialToSpace2 T}
-         elseif H \= 113 then 32|{SpecialToSpace2 T}
-         elseif H \= 114 then 32|{SpecialToSpace2 T}
-         elseif H \= 115 then 32|{SpecialToSpace2 T}
-         elseif H \= 116 then 32|{SpecialToSpace2 T}
-         elseif H \= 117 then 32|{SpecialToSpace2 T}
-         elseif H \= 118 then 32|{SpecialToSpace2 T}
-         elseif H \= 119 then 32|{SpecialToSpace2 T}
-         elseif H \= 120 then 32|{SpecialToSpace2 T}
-         elseif H \= 121 then 32|{SpecialToSpace2 T}
-         elseif H \= 122 then 32|{SpecialToSpace2 T}
-         else H|{SpecialToSpace2 T}
+            if H > 96 then {SpecialToSpace T H|ResList}
+            elseif H < 58 then {SpecialToSpace T H|ResList}
+            else 
+               {SpecialToSpace T 32|ResList}
+            end
          end
       end
    end
 
-   fun{SpecialToSpace3 MatchList Char}
-      case MatchList of
-      nil then Char
-      [] H|T then 
-         if H == Char then {String.replace Char H 32}
-         else {SpecialToSpace3 T Char}
-         end
-      end
-   end
+
    %%%
-   %%% Strips ponctuation symbols from given String
-   %%%      Str: String to strip ponctuation from
+   %%% Take a String and replace non letter and number from
+   %%%      Str: String to repace non letter and number from
    %%%
-   %%% Returns truncated String
+   %%% Returns updated String
    %%%
 
    fun {StripPonctuation Str}
-      local Ponctuation Alphabet Res in 
-         Ponctuation = ["," "." ":" "'" "-" "!" "?" ";" "_"]
-         Alphabet = ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" " "]
-         %{List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
-         %Res = nil
-         %{SpecialToSpace Str Alphabet Res}
-         %{SpecialToSpace2 Str}
-         {SpecialToSpace3 Ponctuation Str}
+      local Res in
+         Res = nil
+         {List.reverse {SpecialToSpace Str Res}}
       end
    end
+
+   
 
 
    %%%
@@ -324,7 +230,7 @@ define
 
    fun {ParseFile File Line Struct InputTextSplit} 
       local AtEnd ReadLine Prediction NewTree in 
-         Prediction = {ParseLine {List.map {String.tokens {StripPonctuation Line} & } Lower} InputTextSplit false}
+         Prediction = {ParseLine {String.tokens {StripPonctuation {Lower Line}} & } InputTextSplit false}
          NewTree = {UpdatePredictionTree Struct Prediction}
          {File atEnd(AtEnd)}
          if AtEnd then NewTree

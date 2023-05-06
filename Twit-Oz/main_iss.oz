@@ -10,7 +10,7 @@ import
 define
    InputText 
    OutputText
-   NGram = 15
+   NGram = 2
    %%% Pour ouvrir les fichiers
    class TextFile
       from Open.file Open.text
@@ -20,28 +20,7 @@ define
       {Browser.browse Buf}
    end
 
-   NbThreads = 500
-
-   %%% -------------   TODO ---------------------
-
-   %%% /!\ Fonction testee /!\
-   %%% @pre : les threads sont "ready"
-   %%% @post: Fonction appellee lorsqu on appuie sur le bouton de prediction
-   %%%        Affiche la prediction la plus probable du prochain mot selon les deux derniers mots entres
-   %%% @return: Retourne une liste contenant la liste du/des mot(s) le(s) plus probable(s) accompagnee de 
-   %%%          la probabilite/frequence la plus elevee. 
-   %%%          La valeur de retour doit prendre la forme:
-   %%%                  <return_val> := <most_probable_words> '|' <probability/frequence> '|' nil
-   %%%                  <most_probable_words> := <atom> '|' <most_probable_words> 
-   %%%                                           | nil
-   %%%                  <probability/frequence> := <int> | <float>
-
-   %%% A QUOI ÇA SERT ??! (à lire avec la voix de Deville) 
-   
-   %%% -------------   TODO ---------------------
-
-
-
+   NbThreads = 208
 
    %%%
    %%% Computes best prediction based on the pairs of prediction-frequency present in the record
@@ -221,10 +200,10 @@ define
 
 
    %%%
-   %%% Strips ponctuation symbols from given String
-   %%%      Str: String to strip ponctuation from
+   %%% Take a String and replace non letter and number from
+   %%%      Str: String to repace non letter and number from
    %%%
-   %%% Returns truncated String
+   %%% Returns updated String
    %%%
 
    fun {StripPonctuation Str}
