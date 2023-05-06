@@ -295,7 +295,7 @@ define
       case MatchList of
       nil then false 
       [] H|T then 
-         if H == Char then true
+         if H.1 == Char then true
          else {Match T Char}
          end
       end
