@@ -12,6 +12,8 @@ import
 define
    InputText 
    OutputText
+   DatabaseList
+   Window
    NGram = 4
    %%% Pour ouvrir les fichiers
    class TextFile
@@ -456,27 +458,27 @@ define
       D E L 
    in
       D={New TkTools.dialog
-         tkInit(title:   'Select custom files database' 
+         tkInit(title:   'Select new file database' 
              buttons: ['Okay' # 
                     proc {$}
+                     A X B in 
                        try 
-                          {Property.put 'directory' {E tkReturn(get $)}}
-                          {D tkClose}
-                       catch _ then skip 
+                        A = {E tkReturn(get $)}
+                           B = {OS.getDir A}
+                           {DatabaseList insert('end' [A])}
+                           {D tkClose}
+                       catch _ then
+                           X={New TkTools.error tkInit(master:D text: 'Directory not found')}
                        end 
                     end 
                     'Cancel' # tkClose]
           default: 1)}
       L={New Tk.label tkInit(parent:D text:'Enter directory relative path:')}
-      E={New Tk.entry tkInit(parent:D bg:wheat width:20)}
+      E={New Tk.entry tkInit(parent:D bg:white foreground:black width:20)}
       {Tk.batch [pack(L E side:left pady:2#m) focus(E)]}
-      {Browse {String.toAtom {GetSentenceFolder}}}
    end
     
    proc {Main}
-
-      TweetsFolder = {GetSentenceFolder}
-   in
       %% Fonction d'exemple qui liste tous les fichiers
       %% contenus dans le dossier passe en Argument.
       %% Inspirez vous en pour lire le contenu des fichiers
@@ -484,17 +486,37 @@ define
       %%% N'appelez PAS cette fonction lors de la phase de
       %%% soumission !!!
       % {ListAllFiles {OS.getDir TweetsFolder}}
-       
-      local NbThreads Description Window SeparatedWordsStream PW PH in
+      
+      local NbThreads Description S in
          {Property.put print foo(width:1000 depth:1000)}  
          % Creation de l interface graphique
          Description=td(
             title: "Text predictor"
             % winfo(height:PH)
-            lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) 
-               button(text:"Predict" width:15 action:proc{$} X in X = {Press} end)
-                  button(text:"Change database" width:15 action:OpenFileExplorer)
+            lr(
+               text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) 
+               td(
+                  td(
+                     button(text:"Predict" width:15 action:proc{$} X in X = {Press} end)
+                     button(text:"Add database" width:15 action:OpenFileExplorer)
+                     listbox(
+                        init:[{String.toAtom {GetSentenceFolder}}]
+                        handle:DatabaseList
+                        selectmode:single
+                        action:
+                              proc{$}
+                                 I = {DatabaseList get(firstselection:$)}
+                                 L = {DatabaseList get(1:$)}
+                                 S =  {List.nth L I}
+                                 AZA
+                              in 
+                                 {Property.put 'directory' S}
+                              end 
+                        tdscrollbar:true
+                     )
+                  )
                )
+            )
             text(handle:OutputText width:50 height:10 background:black foreground:white glue:nw wrap:word)
             action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
             )
@@ -508,7 +530,6 @@ define
          {InputText bind(event:"<Control-s>" action:proc{$} X in X = {Press} end)} % You can also bind events
          {InputText bind(event:"<Escape>" action:proc{$}{Application.exit 0} end)}
          {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
-      
          {InputText set(1:"")}
       end
    end
