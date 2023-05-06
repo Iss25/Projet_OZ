@@ -552,6 +552,7 @@ define
          {TitleLenOut set("Choose length of output:")}
          {TitleLenOut set(state:disabled)}
       end
+      %%ENDOFCODE%%
    end
    {Main}
 end

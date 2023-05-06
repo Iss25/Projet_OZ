@@ -412,6 +412,7 @@ define
       
          {InputText set(1:"")}
       end
+      %%ENDOFCODE%%
    end
    {Main}
 end
