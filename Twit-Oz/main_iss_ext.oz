@@ -290,27 +290,6 @@ define
          end
       end
    end
-
-   fun{Match MatchList Char}
-      case MatchList of
-      nil then false 
-      [] H|T then 
-         if H == Char then true
-         else {Match T Char}
-         end
-      end
-   end
-
-   fun{SpecialToSpace4 MatchList List ResList}
-      case List of
-      nil then ResList
-      [] H|T then 
-         if {Match MatchList H} then {SpecialToSpace4 MatchList T H|ResList}
-         else {SpecialToSpace4 MatchList T 32|ResList}
-         end
-      end
-   end
-
    %%%
    %%% Strips ponctuation symbols from given String
    %%%      Str: String to strip ponctuation from
@@ -321,13 +300,12 @@ define
    fun {StripPonctuation Str}
       local Ponctuation Alphabet Res in 
          Ponctuation = ["," "." ":" "'" "-" "!" "?" ";" "_"]
-         Alphabet = ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"] % "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" " "]
+         Alphabet = ["a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m" "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z" "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" " "]
          %{List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
-         Res = nil
+         %Res = nil
          %{SpecialToSpace Str Alphabet Res}
          %{SpecialToSpace2 Str}
-         %{SpecialToSpace3 Ponctuation Str}
-         {SpecialToSpace4 Alphabet Str Res}
+         {SpecialToSpace3 Ponctuation Str}
       end
    end
 
