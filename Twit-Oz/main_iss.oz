@@ -196,11 +196,11 @@ define
    
 
    %%%
-   %%% Check if the character is not present in the given List
-   %%%      Char:      Character to check presence
-   %%%      MatchList: List of characters to check equality with Char
+   %%% Check in the List if each character is a letter of an number if else replace by a space
+   %%%      List: List of the character to check if it's acceptable
+   %%%      ResList: Accumulator that contains the filtered list
    %%%
-   %%% Returns false if Char is not present in Matchlist, true otherwise
+   %%% Returns ResList when List is nil
    %%% 
 
    fun{SpecialToSpace List ResList}
