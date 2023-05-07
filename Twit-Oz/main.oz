@@ -10,7 +10,7 @@ import
 define
    InputText 
    OutputText
-   NGram = 4
+   NGram = 2
    %%% Pour ouvrir les fichiers
    class TextFile
       from Open.file Open.text
@@ -20,30 +20,7 @@ define
       {Browser.browse Buf}
    end
 
-   InputText 
-   OutputText
    NbThreads = 500
-
-   %%% -------------   TODO ---------------------
-
-   %%% /!\ Fonction testee /!\
-   %%% @pre : les threads sont "ready"
-   %%% @post: Fonction appellee lorsqu on appuie sur le bouton de prediction
-   %%%        Affiche la prediction la plus probable du prochain mot selon les deux derniers mots entres
-   %%% @return: Retourne une liste contenant la liste du/des mot(s) le(s) plus probable(s) accompagnee de 
-   %%%          la probabilite/frequence la plus elevee. 
-   %%%          La valeur de retour doit prendre la forme:
-   %%%                  <return_val> := <most_probable_words> '|' <probability/frequence> '|' nil
-   %%%                  <most_probable_words> := <atom> '|' <most_probable_words> 
-   %%%                                           | nil
-   %%%                  <probability/frequence> := <int> | <float>
-
-   %%% A QUOI ÇA SERT ??! (à lire avec la voix de Deville) 
-   
-   %%% -------------   TODO ---------------------
-
-
-
 
    %%%
    %%% Computes best prediction based on the pairs of prediction-frequency present in the record
@@ -57,9 +34,14 @@ define
 
    fun {GetBestPrediction Tree Arity BestPrediction BestFrequency}
       case Arity of 
-      nil then BestPrediction 
+      nil then Return in
+         if BestPrediction == '' then Return = [[nil] BestFrequency]
+         else 
+            Return = [[BestPrediction] [{Int.toFloat BestFrequency}]]
+         end
       [] H|T then
-         if Tree.H > BestFrequency then {GetBestPrediction Tree T H Tree.H}  
+         if Tree.H > BestFrequency then {GetBestPrediction Tree T H Tree.H}
+         elseif Tree.H == BestFrequency then {GetBestPrediction Tree T {VirtualString.toString (H#' '#BestPrediction)} BestFrequency}  
          else 
             {GetBestPrediction Tree T BestPrediction BestFrequency}
          end    
@@ -82,7 +64,7 @@ define
       [] Predict|T then 
          if Predict == '' then {UpdateOutputTree Struct T OldStruct} 
          else
-            local Value Val PredictionTree NewTree in 
+            local Value Val PredictionTree in 
                Value = {CondSelect OldStruct Predict 0}
                Val = OldStruct.Predict
                PredictionTree = {MakeRecord tree [Predict]}
@@ -120,7 +102,10 @@ define
 
    fun {Press}
       local PredictionTree TempPredictionTree BestPrediction SeparatedWordsStream SeparatedWordsPort Return in 
+         {InputText set(state:disabled)}
+         {OutputText set(state:normal)}
          {OutputText set("Loading... Please wait")}
+         {OutputText set(state:disabled)}
 
          SeparatedWordsPort = {NewPort SeparatedWordsStream}
          
@@ -128,8 +113,16 @@ define
          TempPredictionTree = prediction()
          PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
          BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
-         if BestPrediction == '' then Return = "Not Found" else Return = BestPrediction end
+         if BestPrediction.2 == [0] then Return = "Not Found" 
+         else 
+            Return = BestPrediction
+         end
+
+         {OutputText set(state:normal)}
          {OutputText set(Return)}
+         {OutputText set(state:disabled)}
+         {InputText set(state:normal)}
+         {Browse BestPrediction}
          0
       end
    end
@@ -143,7 +136,7 @@ define
    %%%
 
    fun {Lower Word}
-       {List.map Word Char.toLower}
+      {List.map Word Char.toLower}
    end
 
    %%%
@@ -189,36 +182,41 @@ define
    
 
    %%%
-   %%% Check if the character is not present in the given List
-   %%%      Char:      Character to check presence
-   %%%      MatchList: List of characters to check equality with Char
+   %%% Check in the List if each character is a letter of an number if else replace by a space
+   %%%      List: List of the character to check if it's acceptable
+   %%%      ResList: Accumulator that contains the filtered list
    %%%
-   %%% Returns false if Char is not present in Matchlist, true otherwise
+   %%% Returns ResList when List is nil
    %%% 
 
-   fun {DoesntMatch Char MatchList}
-      case MatchList of 
-      nil then true
-      [] H|T then
-         if H.1 == Char then false 
-         else
-            {DoesntMatch Char T} 
-         end 
-      end 
+   fun{SpecialToSpace List ResList}
+      case List of
+      nil then ResList
+      [] H|T then 
+         if H < 48 then {SpecialToSpace T 32|ResList}
+         elseif H > 122 then {SpecialToSpace T 32|ResList}
+         else 
+            if H > 96 then {SpecialToSpace T H|ResList}
+            elseif H < 58 then {SpecialToSpace T H|ResList}
+            else 
+               {SpecialToSpace T 32|ResList}
+            end
+         end
+      end
    end
 
 
    %%%
-   %%% Strips ponctuation symbols from given String
-   %%%      Str: String to strip ponctuation from
+   %%% Take a String and replace non letter and number from
+   %%%      Str: String to repace non letter and number from
    %%%
-   %%% Returns truncated String
+   %%% Returns updated String
    %%%
 
    fun {StripPonctuation Str}
-      local Ponctuation in 
-         Ponctuation = ["!" "?" ";" "," "." ":"]
-         {List.filter Str fun {$ Char} {DoesntMatch Char Ponctuation} end}
+      local Res in
+         Res = nil
+         {List.reverse {SpecialToSpace Str Res}}
       end
    end
 
@@ -234,7 +232,7 @@ define
 
    fun {ParseFile File Line Struct InputTextSplit} 
       local AtEnd ReadLine Prediction NewTree in 
-         Prediction = {ParseLine {List.map {String.tokens {StripPonctuation Line} & } Lower} InputTextSplit false}
+         Prediction = {ParseLine {String.tokens {StripPonctuation {Lower Line}} & } InputTextSplit false}
          NewTree = {UpdatePredictionTree Struct Prediction}
          {File atEnd(AtEnd)}
          if AtEnd then NewTree
@@ -288,24 +286,24 @@ define
    
 
    %%%
-   %%% Strips last N characters at the end of a String 
+   %%% Strips last characters at the end of a String that are useless for the search
    %%%   S:     String to strip chars from
-   %%%   NChar: Amount of characters to strip
    %%%
    %%% Returns truncated string
    %%%
 
-   fun {StripLastChar S NChar} 
-      fun {StringFirstChar Str NFchar}
-         if NFchar =< 0 then Str 
-         else
-            case Str of nil then nil
-            [] H|T then {StringFirstChar T NFchar-1}
+   fun {StripLastChar S} 
+      fun {StringFirstChar Str}
+         case Str of nil then nil
+         [] H|T then 
+            if H == 32 then {StringFirstChar T}
+            elseif H == 10 then {StringFirstChar T}
+            else Str 
             end
          end
       end
    in 
-      {List.reverse {StringFirstChar {List.reverse S} NChar}}
+      {List.reverse {StringFirstChar {List.reverse S}}}
    end
 
    %%%
@@ -320,7 +318,7 @@ define
    %%%
 
    proc {LaunchThread Input Port First N Xn Files FilePerThread}
-      local Tree FPT Content Xni in 
+      local Tree FPT Xni in 
          Tree = tree()
          if First then FPT = FilePerThread + {Length Files} mod N else FPT = FilePerThread end
          thread 
@@ -347,7 +345,10 @@ define
          FilePerThread = {Length Files} div N
          Xn = unit
          {InputText get(Content)}
-         Input = {NgramInput {List.map {String.tokens {StripLastChar Content 1} & } Lower}}
+         {InputText set(state:normal)}
+         {InputText set({StripLastChar Content})}
+         {InputText set(state:disabled)}
+         Input = {NgramInput {List.map {String.tokens {StripLastChar Content} & } Lower}}
          {Browse {List.map Input String.toAtom}}
          {LaunchThread Input Port true N Xn Files FilePerThread}
       end
@@ -375,17 +376,18 @@ define
       %%% soumission !!!
       % {ListAllFiles {OS.getDir TweetsFolder}}
        
-      local NbThreads Description Window SeparatedWordsStream B in
+      local Description Window in
          {Property.put print foo(width:1000 depth:1000)}  
-      
          % Creation de l interface graphique
          Description=td(
             title: "Text predictor"
-            lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
-            text(handle:OutputText width:50 height:10 background:black foreground:white glue:w wrap:word)
+            lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) 
+               button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
+            text(handle:OutputText width:50 height:10 background:black foreground:white glue:nw wrap:word)
             action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
             )
-      
+         
+         
          % Creation de la fenetre
          Window={QTk.build Description}
          {Window show}
@@ -395,8 +397,10 @@ define
          {InputText bind(event:"<Escape>" action:proc{$}{Application.exit 0} end)}
          {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
       
-         {InputText set(1:{StripPonctuation "."})}
+         {InputText set(1:"")}
+         {OutputText set(state:disabled)}
       end
+      %%ENDOFCODE%%
    end
    {Main}
 end
