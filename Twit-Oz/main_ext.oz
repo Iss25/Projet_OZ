@@ -13,6 +13,10 @@ define
     InputText 
     OutputText
     DatabaseList
+    InfoGram
+    TitleGram  
+    LenOut
+    TitleLenOut
     NGram = 2
     %%% Pour ouvrir les fichiers
     class TextFile
@@ -86,7 +90,7 @@ define
             TempPredictionTree = prediction()
             PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
             ATree = prediction()
-            SortedArity = {List.take {List.sort {Arity PredictionTree} fun{$ A B} PredictionTree.A > PredictionTree.B end} 4}
+            SortedArity = {List.take {List.sort {Arity PredictionTree} fun{$ A B} PredictionTree.A > PredictionTree.B end} {String.toInt {LenOut get(1:$)}}}
             NPredictionsArray = {List.map SortedArity fun{$ A} {VirtualString.toAtom A#":"#{Int.toFloat (PredictionTree.A)}#"|"} end}
 
             if {Length NPredictionsArray} == 0 then Return = "Not Found" 
@@ -320,6 +324,48 @@ define
             {LaunchThread Input Port true N Xn Files FilePerThread}
         end
     end
+
+    proc {IncreaseGram}
+        local Inc in 
+            {InfoGram get(Inc)}
+            {InfoGram set(state:normal)}
+            {InfoGram set(1:{Int.toString {String.toInt Inc}+1})}
+            {InfoGram set(state:disabled)}
+        end
+    end
+
+    proc {DecreaseGram}
+        local Dec in 
+            {InfoGram get(Dec)}
+            if Dec == "1" then {InfoGram set(1:Dec)}
+            else 
+                {InfoGram set(state:normal)}
+                {InfoGram set(1:{Int.toString {String.toInt Dec}-1})}
+                {InfoGram set(state:disabled)}
+            end
+        end
+    end
+
+    proc {IncreaseLen}
+        local Inc in 
+            {LenOut get(Inc)}
+            {LenOut set(state:normal)}
+            {LenOut set(1:{Int.toString {String.toInt Inc}+1})}
+            {LenOut set(state:disabled)}
+        end
+    end
+
+    proc {DecreaseLen}
+        local Dec in 
+            {LenOut get(Dec)}
+            if Dec == "1" then {LenOut set(1:Dec)}
+            else 
+                {LenOut set(state:normal)}
+                {LenOut set(1:{Int.toString {String.toInt Dec}-1})}
+                {LenOut set(state:disabled)}
+            end
+        end
+    end
     
     proc {OpenFileExplorer}
       D E L 
@@ -354,9 +400,6 @@ define
     end
         
     proc {Main}
-
-        TweetsFolder = {GetSentenceFolder}
-    in
         %% Fonction d'exemple qui liste tous les fichiers
         %% contenus dans le dossier passe en Argument.
         %% Inspirez vous en pour lire le contenu des fichiers
@@ -365,7 +408,7 @@ define
         %%% soumission !!!
         % {ListAllFiles {OS.getDir TweetsFolder}}
         
-        local NbThreads Description Window SeparatedWordsStream PW PH in
+        local NbThreads Description Window in
             {Property.put print foo(width:1000 depth:1000)}  
             % Creation de l interface graphique
             Description=td(
@@ -396,6 +439,14 @@ define
                     )
                 )
                 text(handle:OutputText width:80 height:10 background:black foreground:white glue:nw wrap:word)
+                lr(text(handle:TitleGram width:20 height:1 background:white foreground:black glue:nw wrap:word)
+                button(text:"-" width:8 glue:nw action: DecreaseGram)
+                text(handle:InfoGram width:11 height:1 background:white foreground:black glue:nw wrap:word)
+                button(text:"+" width:8 glue:nw action: IncreaseGram) glue:nw)
+                lr(text(handle:TitleLenOut width:25 height:1 background:white foreground:black glue:nw wrap:word)
+                button(text:"-" width:8 glue:nw action: DecreaseLen)
+                text(handle:LenOut width:6 height:1 background:white foreground:black glue:nw wrap:word)
+                button(text:"+" width:8 glue:nw action: IncreaseLen) glue:nw)
                 action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
             )
             
@@ -410,6 +461,18 @@ define
             {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
         
             {InputText set(1:"")}
+
+            {InfoGram set(1:"2")}
+            {InfoGram set(state:disabled)}
+
+            {TitleGram set("Choose N for N-Gram:")}
+            {TitleGram set(state:disabled)}
+
+            {LenOut set(1:"1")}
+            {LenOut set(state:disabled)}
+
+            {TitleLenOut set("Choose length of output:")}
+            {TitleLenOut set(state:disabled)}
         end
         %%ENDOFCODE%%
     end
