@@ -120,43 +120,13 @@ define
       end
    end
 
-   fun {SortedTree SortedArity Tree NewTree N} 
-      if N == 0 then NewTree 
-      else
-         case SortedArity 
-         of nil then NewTree
-         [] H|T then Prediction = prediction(H:Tree.H) in
-            {SortedTree T Tree {Adjoin NewTree Prediction} N-1}
-         end
-      end
-   end
-
-   fun {TreeToArray Tree}
-      fun {TreeToArrayAcc Arity Tree Acc}
-         case Arity
-         of nil then Acc
-         [] H|T then Value = {VirtualString.toString H#":"#({Int.toFloat Tree.H})} in
-            {Browse {List.map Acc String.toAtom}}
-            if {Length Acc} == 0 then {TreeToArrayAcc T Tree [Value]}
-            else {TreeToArrayAcc T Tree {List.append Acc [Value]}}
-            end
-         end
-      end
-   in
-      {TreeToArrayAcc {SortArity Tree} Tree nil}
-   end
-
-   fun {SortArity Tree}
-      {List.sort {Arity Tree} fun{$ A B} Tree.A > Tree.B end}
-   end
-
 
    %%%
    %%% Function called when the prediction task is launched
    %%%
 
    fun {Press}
-      local PredictionTree TempPredictionTree BestPrediction SeparatedWordsStream SeparatedWordsPort Return ATree NPredictionsTree NPredictionsArray in 
+      local PredictionTree TempPredictionTree BestPrediction SeparatedWordsStream SeparatedWordsPort Return ATree NPredictionsTree NPredictionsArray SortedArrayKeyPair SortedArity in 
          {OutputText set("Loading... Please wait")}
 
          SeparatedWordsPort = {NewPort SeparatedWordsStream}
@@ -165,17 +135,15 @@ define
          TempPredictionTree = prediction()
          PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
          ATree = prediction()
-         NPredictionsTree = {SortedTree {SortArity PredictionTree} PredictionTree ATree 4}
-         NPredictionsArray = {List.map {TreeToArray NPredictionsTree} String.toAtom}
-         {System.show NPredictionsArray}
-         %BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
+         SortedArity = {List.take {List.sort {Arity PredictionTree} fun{$ A B} PredictionTree.A > PredictionTree.B end} 4}
+         NPredictionsArray = {List.map SortedArity fun{$ A} {VirtualString.toAtom A#":"#{Int.toFloat (PredictionTree.A)}#"|"} end}
+
          if {Length NPredictionsArray} == 0 then Return = "Not Found" 
          else 
-            Return = NPredictionsArray %{Value.toVirtualString BestPrediction} 
+            Return = [NPredictionsArray] 
          end
          {OutputText set(Return)}
-         {Browse NPredictionsTree}
-         NPredictionsTree
+         {List.toRecord prediction {List.map SortedArity fun {$ K} K#(PredictionTree.K) end}}
       end
    end
 
@@ -527,7 +495,7 @@ define
             title: "Text predictor"
             % winfo(height:PH)
             lr(
-               text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) 
+               text(handle:InputText width:80 height:10 background:white foreground:black wrap:word) 
                td(
                   td(
                      button(text:"Predict" width:15 action:proc{$} X in X = {Press} end)
@@ -550,7 +518,7 @@ define
                   )
                )
             )
-            text(handle:OutputText width:50 height:10 background:black foreground:white glue:nw wrap:word)
+            text(handle:OutputText width:80 height:10 background:black foreground:white glue:nw wrap:word)
             action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
             )
          
