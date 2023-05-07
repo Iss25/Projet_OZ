@@ -34,17 +34,12 @@ define
 
    fun {GetBestPrediction Tree Arity BestPrediction BestFrequency}
       case Arity of 
-      nil then Return in
-         if BestPrediction == '' then Return = [[nil] BestFrequency]
-         else 
-            Return = [[BestPrediction] [{Int.toFloat BestFrequency}]]
-         end
+      nil then [BestPrediction [BestFrequency]]
       [] H|T then
-         if Tree.H > BestFrequency then {GetBestPrediction Tree T H Tree.H}
-         elseif Tree.H == BestFrequency then {GetBestPrediction Tree T {VirtualString.toString (H#' '#BestPrediction)} BestFrequency}  
-         else 
-            {GetBestPrediction Tree T BestPrediction BestFrequency}
-         end    
+         if Tree.H > BestFrequency then {GetBestPrediction Tree T [H] Tree.H}
+         elseif Tree.H == BestFrequency then {GetBestPrediction Tree T {List.append BestPrediction [H]} BestFrequency}
+         else {GetBestPrediction Tree T BestPrediction BestFrequency}
+         end
       end
    end
 
@@ -95,6 +90,18 @@ define
       end
    end
 
+   fun {ListToString List}
+      fun {ListToStringAcc List Acc}
+         case List of
+         nil then Acc
+         [] H|T then
+            {ListToStringAcc T {VirtualString.toAtom Acc#'|'#H}}
+         end
+      end
+   in
+      {ListToStringAcc List ''}
+   end
+
 
    %%%
    %%% Function called when the prediction task is launched
@@ -115,14 +122,14 @@ define
          BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
          if BestPrediction.2 == [0] then Return = "Not Found" 
          else 
-            Return = BestPrediction
+            Return = {VirtualString.toAtom {ListToString BestPrediction.1}#' -> '#{IntToFloat ((BestPrediction.2).1).1}}
          end
 
          {OutputText set(state:normal)}
          {OutputText set(Return)}
          {OutputText set(state:disabled)}
          {InputText set(state:normal)}
-         Return
+         BestPrediction
       end
    end
 
