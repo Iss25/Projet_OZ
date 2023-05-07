@@ -1,6 +1,6 @@
 TWEETS_FOLDER="tweets"
 UNAME_S := $(shell uname -s)
-ENTRY_POINT=main.ozf
+ENTRY_POINT=main_ext.ozf
 
 ifeq ($(UNAME_S),Darwin)
 	OZC = /Applications/Mozart2.app/Contents/Resources/bin/ozc

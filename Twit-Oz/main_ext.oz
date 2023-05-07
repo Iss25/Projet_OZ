@@ -82,7 +82,10 @@ define
 
     fun {Press}
         local PredictionTree TempPredictionTree BestPrediction SeparatedWordsStream SeparatedWordsPort Return ATree NPredictionsTree NPredictionsArray SortedArrayKeyPair SortedArity in 
+            {InputText set(state:disabled)}
+            {OutputText set(state:normal)}
             {OutputText set("Loading... Please wait")}
+            {OutputText set(state:disabled)}
 
             SeparatedWordsPort = {NewPort SeparatedWordsStream}
             
@@ -97,7 +100,10 @@ define
             else 
                 Return = [NPredictionsArray] 
             end
+            {OutputText set(state:normal)}
             {OutputText set(Return)}
+            {OutputText set(state:disabled)}
+            {InputText set(state:normal)}
             {List.toRecord prediction {List.map SortedArity fun {$ K} K#(PredictionTree.K) end}}
         end
    end
@@ -319,7 +325,9 @@ define
             FilePerThread = {Length Files} div N
             Xn = unit
             {InputText get(Content)}
+            {InputText set(state:normal)}
             {InputText set({StripLastChar Content})}
+            {InputText set(state:disabled)}
             Input = {NgramInput {List.map {String.tokens {StripLastChar Content} & } Lower}}
             {LaunchThread Input Port true N Xn Files FilePerThread}
         end
@@ -461,6 +469,7 @@ define
             {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
         
             {InputText set(1:"")}
+            {OutputText set(state:disabled)}
 
             {InfoGram set(1:"2")}
             {InfoGram set(state:disabled)}
