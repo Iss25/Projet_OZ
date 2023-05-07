@@ -355,7 +355,6 @@ define
          {InputText set({StripLastChar Content})}
          {InputText set(state:disabled)}
          Input = {NgramInput {List.map {String.tokens {StripLastChar Content} & } Lower}}
-         {Browse {List.map Input String.toAtom}}
          {LaunchThread Input Port true N Xn Files FilePerThread}
       end
    end
