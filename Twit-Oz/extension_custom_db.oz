@@ -135,7 +135,7 @@ define
       fun {TreeToArrayAcc Arity Tree Acc}
          case Arity
          of nil then Acc
-         [] H|T then Value = {VirtualString.toString H#":"#(Tree.H)} in
+         [] H|T then Value = {VirtualString.toString H#":"#({Int.toFloat Tree.H})} in
             {Browse {List.map Acc String.toAtom}}
             if {Length Acc} == 0 then {TreeToArrayAcc T Tree [Value]}
             else {TreeToArrayAcc T Tree {List.append Acc [Value]}}
@@ -143,7 +143,11 @@ define
          end
       end
    in
-      {TreeToArrayAcc {Arity Tree} Tree nil}
+      {TreeToArrayAcc {SortArity Tree} Tree nil}
+   end
+
+   fun {SortArity Tree}
+      {List.sort {Arity Tree} fun{$ A B} Tree.A > Tree.B end}
    end
 
 
@@ -161,7 +165,7 @@ define
          TempPredictionTree = prediction()
          PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
          ATree = prediction()
-         NPredictionsTree = {SortedTree {List.sort {Arity PredictionTree} fun{$ A B} PredictionTree.A > PredictionTree.B end} PredictionTree ATree 4}
+         NPredictionsTree = {SortedTree {SortArity PredictionTree} PredictionTree ATree 4}
          NPredictionsArray = {List.map {TreeToArray NPredictionsTree} String.toAtom}
          {System.show NPredictionsArray}
          %BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
