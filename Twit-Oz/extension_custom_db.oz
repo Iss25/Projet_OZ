@@ -120,13 +120,39 @@ define
       end
    end
 
+   fun {SortedTree SortedArity Tree NewTree N} 
+      if N == 0 then NewTree 
+      else
+         case SortedArity 
+         of nil then NewTree
+         [] H|T then Prediction = prediction(H:Tree.H) in
+            {SortedTree T Tree {Adjoin NewTree Prediction} N-1}
+         end
+      end
+   end
+
+   fun {TreeToArray Tree}
+      fun {TreeToArrayAcc Arity Tree Acc}
+         case Arity
+         of nil then Acc
+         [] H|T then Value = {VirtualString.toString H#":"#(Tree.H)} in
+            {Browse {List.map Acc String.toAtom}}
+            if {Length Acc} == 0 then {TreeToArrayAcc T Tree [Value]}
+            else {TreeToArrayAcc T Tree {List.append Acc [Value]}}
+            end
+         end
+      end
+   in
+      {TreeToArrayAcc {Arity Tree} Tree nil}
+   end
+
 
    %%%
    %%% Function called when the prediction task is launched
    %%%
 
    fun {Press}
-      local PredictionTree TempPredictionTree BestPrediction SeparatedWordsStream SeparatedWordsPort Return in 
+      local PredictionTree TempPredictionTree BestPrediction SeparatedWordsStream SeparatedWordsPort Return ATree NPredictionsTree NPredictionsArray in 
          {OutputText set("Loading... Please wait")}
 
          SeparatedWordsPort = {NewPort SeparatedWordsStream}
@@ -134,14 +160,18 @@ define
          {LaunchThreads SeparatedWordsPort NbThreads}
          TempPredictionTree = prediction()
          PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
-         BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
-         if BestPrediction.2 == [0] then Return = "Not Found" 
+         ATree = prediction()
+         NPredictionsTree = {SortedTree {List.sort {Arity PredictionTree} fun{$ A B} PredictionTree.A > PredictionTree.B end} PredictionTree ATree 4}
+         NPredictionsArray = {List.map {TreeToArray NPredictionsTree} String.toAtom}
+         {System.show NPredictionsArray}
+         %BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
+         if {Length NPredictionsArray} == 0 then Return = "Not Found" 
          else 
-            Return = BestPrediction %{Value.toVirtualString BestPrediction} 
+            Return = NPredictionsArray %{Value.toVirtualString BestPrediction} 
          end
          {OutputText set(Return)}
-         {Browse BestPrediction}
-         0
+         {Browse NPredictionsTree}
+         NPredictionsTree
       end
    end
 
