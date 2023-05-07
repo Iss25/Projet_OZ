@@ -122,7 +122,6 @@ define
          {OutputText set(Return)}
          {OutputText set(state:disabled)}
          {InputText set(state:normal)}
-         {Browse BestPrediction}
          Return
       end
    end
