@@ -64,7 +64,7 @@ define
       [] Predict|T then 
          if Predict == '' then {UpdateOutputTree Struct T OldStruct} 
          else
-            local Value Val PredictionTree NewTree in 
+            local Value Val PredictionTree in 
                Value = {CondSelect OldStruct Predict 0}
                Val = OldStruct.Predict
                PredictionTree = {MakeRecord tree [Predict]}
@@ -318,7 +318,7 @@ define
    %%%
 
    proc {LaunchThread Input Port First N Xn Files FilePerThread}
-      local Tree FPT Content Xni in 
+      local Tree FPT Xni in 
          Tree = tree()
          if First then FPT = FilePerThread + {Length Files} mod N else FPT = FilePerThread end
          thread 
@@ -376,12 +376,11 @@ define
       %%% soumission !!!
       % {ListAllFiles {OS.getDir TweetsFolder}}
        
-      local NbThreads Description Window SeparatedWordsStream PW PH in
+      local Description Window in
          {Property.put print foo(width:1000 depth:1000)}  
          % Creation de l interface graphique
          Description=td(
             title: "Text predictor"
-            % winfo(height:PH)
             lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) 
                button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
             text(handle:OutputText width:50 height:10 background:black foreground:white glue:nw wrap:word)
