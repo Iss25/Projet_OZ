@@ -85,16 +85,16 @@ define
 
    fun {UpdateOutputTree Struct Arity OldStruct}
       case Arity of 
-      nil then Struct
-      [] Predict|T then 
-         if Predict == '' then {UpdateOutputTree Struct T OldStruct} 
+      nil then OldStruct
+      [] Prediction|T then 
+         if Prediction == '' then {UpdateOutputTree Struct T OldStruct} 
          else
             local Value Val PredictionTree NewTree in 
-               Value = {CondSelect OldStruct Predict 0}
-               Val = OldStruct.Predict
-               PredictionTree = {MakeRecord tree [Predict]}
-               PredictionTree.Predict = Value + Val
-               {UpdateOutputTree {Adjoin Struct PredictionTree} T OldStruct}
+               Value = {CondSelect OldStruct Prediction 0}
+               Val = Struct.Prediction
+               PredictionTree = {MakeRecord tree [Prediction]}
+               PredictionTree.Prediction = Value + Val
+               {UpdateOutputTree Struct T {Adjoin OldStruct PredictionTree}}
             end
          end
       end
@@ -115,7 +115,7 @@ define
       [] H|T then 
          if H == nil then Tree 
          else
-            {ReadStream T {UpdateOutputTree H {Arity Tree} Tree}}
+            {ReadStream T {UpdateOutputTree H {Arity H} Tree}}
          end
       end
    end
@@ -348,17 +348,15 @@ define
    %%% Returns computed prediction record
    %%%
 
-   fun {LaunchTask Files StartIndex EndIndex CurrentIndex Struct InputTextSplit}
+   fun {LaunchTask Files Struct InputTextSplit}
       case Files of nil then Struct
       [] H|T then
-         if CurrentIndex >= EndIndex then Struct
-         elseif CurrentIndex < StartIndex then {LaunchTask T StartIndex EndIndex CurrentIndex+1 Struct InputTextSplit}
-         else Path Output File Line in 
+         local Path Output File Line in 
             Path = {VirtualString.toAtom {GetSentenceFolder}#"/"#H}
             File = {New TextFile init(name:Path flags:[read])}
             {File getS(Line)}
             Output = {ParseFile File Line Struct InputTextSplit}
-            {LaunchTask T StartIndex EndIndex CurrentIndex+1 Output InputTextSplit}
+            {LaunchTask T Output InputTextSplit}
          end
       end
    end
@@ -411,18 +409,19 @@ define
    %%%
 
    proc {LaunchThread Input Port First N Xn Files FilePerThread}
-      local Tree FPT Content Xni in 
+      local Tree FPT Content Xni Y Z in 
          Tree = tree()
          if First then FPT = FilePerThread + {Length Files} mod N else FPT = FilePerThread end
          thread 
             local R in 
-               R = {LaunchTask Files N*FilePerThread N*FilePerThread+FPT 0 Tree Input} 
+               {List.takeDrop Files FPT Y Z}
+               R = {LaunchTask Y Tree Input} 
                {Send Port R}
                Xni = Xn
             end 
          end
-         if N > 0 then
-            {LaunchThread Input Port false N-1 Xni Files FilePerThread}
+         if N > 1 then
+            {LaunchThread Input Port false N-1 Xni Z FilePerThread}
          else
             {Wait Xni}
             {Send Port nil}
