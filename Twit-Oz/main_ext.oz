@@ -17,7 +17,6 @@ define
     TitleGram  
     LenOut
     TitleLenOut
-    NGram = 2
     %%% Pour ouvrir les fichiers
     class TextFile
         from Open.file Open.text
@@ -257,7 +256,7 @@ define
     %%%
 
     fun {NgramInput InputTextSplit}
-        if {Length InputTextSplit} =< NGram then InputTextSplit
+        if {Length InputTextSplit} =< {String.toInt {InfoGram get(1:$)}} then InputTextSplit
         else 
             {NgramInput InputTextSplit.2}
         end
