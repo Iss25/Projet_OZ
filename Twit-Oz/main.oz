@@ -129,7 +129,7 @@ define
          {OutputText set(Return)}
          {OutputText set(state:disabled)}
          {InputText set(state:normal)}
-         0
+         BestPrediction
       end
    end
 
