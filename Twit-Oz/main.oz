@@ -80,15 +80,13 @@ define
    %%%
    
    fun {ReadStream Stream Tree}
-        case Stream of 
-        nil then Tree
-        [] H|T then 
-            if H == nil then Tree 
-            else
-                {ReadStream T {UpdateOutputTree H {Arity H} Tree}}
-            end
-        end
-    end
+      case Stream of 
+      nil then Tree
+      [] H|T then 
+         if H == nil then Tree 
+         else {ReadStream T {UpdateOutputTree H {Arity H} Tree}} end
+      end
+   end
 
 
    %%%
