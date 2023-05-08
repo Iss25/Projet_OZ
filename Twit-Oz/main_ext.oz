@@ -441,7 +441,7 @@ define
         %%% N'appelez PAS cette fonction lors de la phase de
         %%% soumission !!!
         
-        local NbThreads Description Window in
+        local Description Window in
             {Property.put print foo(width:1000 depth:1000)}  
             % Creation de l interface graphique
             Description=td(
