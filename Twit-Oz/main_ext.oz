@@ -69,7 +69,6 @@ define
         [] H|T then 
             if H == nil then Tree 
             else
-                {System.show H}
                 {ReadStream T {UpdateOutputTree H {Arity H} Tree}}
             end
         end
@@ -81,7 +80,7 @@ define
     %%%
 
     fun {Press}
-        local PredictionTree TempPredictionTree BestPrediction SeparatedWordsStream SeparatedWordsPort Return ATree NPredictionsTree NPredictionsArray SortedArrayKeyPair SortedArity in 
+        local PredictionTree TempPredictionTree SeparatedWordsStream SeparatedWordsPort Return NPredictionsArray SortedArity in 
             {InputText set(state:disabled)}
             {OutputText set(state:normal)}
             {OutputText set("Loading... Please wait")}
@@ -92,7 +91,6 @@ define
             {LaunchThreads SeparatedWordsPort NbThreads}
             TempPredictionTree = prediction()
             PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
-            ATree = prediction()
             SortedArity = {List.take {List.sort {Arity PredictionTree} fun{$ A B} PredictionTree.A > PredictionTree.B end} {String.toInt {LenOut get(1:$)}}}
             NPredictionsArray = {List.map SortedArity fun{$ A} {VirtualString.toAtom A#":"#{Int.toFloat (PredictionTree.A)}#"|"} end}
 
@@ -104,7 +102,7 @@ define
             {OutputText set(Return)}
             {OutputText set(state:disabled)}
             {InputText set(state:normal)}
-            {System.show PredictionTree}
+
             {List.toRecord prediction {List.map SortedArity fun {$ K} K#(PredictionTree.K) end}}
         end
    end
@@ -132,24 +130,23 @@ define
     %%%
 
     fun {ParseLine Line InputTextSplit}
-        fun {ParseLineA Line InputTextSplit InitialLength CurrentLength InitialLine}
-            case Line#InputTextSplit 
-            of nil#nil then nil
-            [] (A|B)#(C|D) then if A == C then {ParseLineA B D InitialLength CurrentLength+1 InitialLine} else {ParseLineA B InputTextSplit InitialLength 0 InitialLine} end
-            [] (H|T)#nil then 
-                    if H == '' then nil
-                    elseif CurrentLength == InitialLength then
-                            {System.show {VirtualString.toAtom "found "#H}}{System.show {List.map InitialLine String.toAtom}}    
-                        H
-                    else nil 
-                    end
-            [] nil#(H|T) then nil
-            else nil
+      fun {ParseLineA CurrentLine CurrentInputTextSplit InitialLength CurrentLength Struct}
+         case CurrentLine#CurrentInputTextSplit 
+         of nil#nil then Struct
+         [] (A|B)#(C|D) then if A == C then {ParseLineA B D InitialLength CurrentLength+1 Struct} else {ParseLineA B InputTextSplit InitialLength 0 Struct} end
+         [] (H|T)#nil then 
+            if CurrentLength == InitialLength then {ParseLineA T InputTextSplit InitialLength 0 {UpdatePredictionTree Struct H}}
+            else {ParseLineA T InputTextSplit {Length InputTextSplit} 0 Struct} 
             end
-        end
-    in
-        {ParseLineA Line InputTextSplit {Length InputTextSplit} 0 Line}
-    end
+         [] nil#(H|T) then Struct
+         else Struct
+         end
+      end
+      T
+   in
+      T = tree()
+      {ParseLineA Line InputTextSplit {Length InputTextSplit} 0 T}
+   end
 
 
     %%%
@@ -185,13 +182,18 @@ define
         case List of
         nil then ResList
         [] H|T then 
-            if H < 48 then {SpecialToSpace T 32|ResList}
-            elseif H > 122 then {SpecialToSpace T 32|ResList}
+            if H == nil then {SpecialToSpace T ResList}
+            elseif H == 32 then {SpecialToSpace T H|ResList}
+            elseif H == 39 then {SpecialToSpace T ResList}
+            elseif H == 10 then {SpecialToSpace T 32|ResList}
+            elseif H == 47 then {SpecialToSpace T 32|ResList}
+            elseif H < 48 then {SpecialToSpace T ResList}
+            elseif H > 122 then {SpecialToSpace T ResList}
             else 
                 if H > 96 then {SpecialToSpace T H|ResList}
                 elseif H < 58 then {SpecialToSpace T H|ResList}
                 else 
-                {SpecialToSpace T 32|ResList}
+                {SpecialToSpace T ResList}
                 end
             end
         end
@@ -212,6 +214,26 @@ define
         end
     end
 
+    fun {FilterDoubleSpace String}
+        fun {FilterDoubleSpaceBool A LastSpace}
+            case A 
+            of nil then nil
+            [] H|T then 
+                if H == 32 then
+                if LastSpace then
+                    {FilterDoubleSpaceBool T true}
+                else
+                    32|{FilterDoubleSpaceBool T true}
+                end
+                else
+                H|{FilterDoubleSpaceBool T false}
+                end
+            end
+        end
+    in
+        {FilterDoubleSpaceBool String false}
+    end
+
 
     %%%
     %%% Parses a file a computes a record of prediction mapped with frequency after input in the given file
@@ -222,16 +244,10 @@ define
     %%% Returns computed prediction record
     %%%
 
-    fun {ParseFile File Line Struct InputTextSplit} 
-        local AtEnd ReadLine Prediction NewTree in 
-            Prediction = {ParseLine {String.tokens {StripPonctuation {Lower Line}} & } InputTextSplit}
-            NewTree = {UpdatePredictionTree Struct Prediction}
-            {File atEnd(AtEnd)}
-            if AtEnd then NewTree
-            else 
-                {File getS(ReadLine)} 
-                {ParseFile File ReadLine NewTree InputTextSplit}
-            end
+    fun {ParseFile File Struct InputTextSplit} 
+        local StringedFile in 
+            {File read(list:StringedFile size:all)}
+            {ParseLine {String.tokens {FilterDoubleSpace {StripPonctuation {Lower StringedFile}}} & } InputTextSplit}
         end
     end
 
@@ -247,18 +263,21 @@ define
     %%% Returns computed prediction record
     %%%
 
-    fun {LaunchTask Files Struct InputTextSplit}
-        case Files of nil then Struct
+    proc {LaunchTask Port Files StartIndex EndIndex CurrentIndex InputTextSplit}
+        case Files of nil then skip
         [] H|T then
-            local Path Output File Line in 
+            if CurrentIndex >= EndIndex then skip
+            elseif CurrentIndex < StartIndex then {LaunchTask Port T StartIndex EndIndex CurrentIndex+1 InputTextSplit}
+            else Path Output File Tree in 
                 Path = {VirtualString.toAtom {GetSentenceFolder}#"/"#H}
                 File = {New TextFile init(name:Path flags:[read])}
-                {File getS(Line)}
-                Output = {ParseFile File Line Struct InputTextSplit}
-                {LaunchTask T Output InputTextSplit}
+                Tree = tree()
+                Output = {ParseFile File Tree InputTextSplit}
+                if {Length {Arity Output}} > 0 then {Send Port Output} end
+                {LaunchTask Port T StartIndex EndIndex CurrentIndex+1 InputTextSplit}
             end
         end
-   end
+    end
 
     %%%
     %%% Reduces amount of words in the input to NGram 
@@ -308,25 +327,22 @@ define
     %%%
 
     proc {LaunchThread Input Port First N Xn Files FilePerThread}
-        local Tree FPT Content Xni Y Z in 
-            Tree = tree()
+        local FPT Xni in 
             if First then FPT = FilePerThread + {Length Files} mod N else FPT = FilePerThread end
             thread 
                 local R in 
-                {List.takeDrop Files FPT Y Z}
-                R = {LaunchTask Y Tree Input} 
-                if {Length {Arity R}} \= 0 then {Send Port R} end
+                {LaunchTask Port Files N*FilePerThread N*FilePerThread+FPT 0 Input} 
                 Xni = Xn
                 end 
             end
-            if N > 1 then
-                {LaunchThread Input Port false N-1 Xni Z FilePerThread}
+            if N > 0 then
+                {LaunchThread Input Port false N-1 Xni Files FilePerThread}
             else
                 {Wait Xni}
                 {Send Port nil}
             end
         end
-   end
+    end
 
         %%% Lance les N threads de lecture et de parsing qui liront et traiteront tous les fichiers
         %%% Les threads de parsing envoient leur resultat au port Port
@@ -339,7 +355,8 @@ define
             {InputText set(state:normal)}
             {InputText set({StripLastChar Content})}
             {InputText set(state:disabled)}
-            Input = {NgramInput {List.map {String.tokens {StripLastChar Content} & } Lower}}
+            
+            Input = {NgramInput {List.map {String.tokens {FilterDoubleSpace {StripPonctuation {StripLastChar Content}}} & } Lower}}
             {LaunchThread Input Port true N Xn Files FilePerThread}
         end
     end
