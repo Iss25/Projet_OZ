@@ -442,14 +442,12 @@ define
         %% se trouvant dans le dossier
         %%% N'appelez PAS cette fonction lors de la phase de
         %%% soumission !!!
-        % {ListAllFiles {OS.getDir TweetsFolder}}
         
         local NbThreads Description Window in
             {Property.put print foo(width:1000 depth:1000)}  
             % Creation de l interface graphique
             Description=td(
                 title: "Text predictor"
-                % winfo(height:PH)
                 lr(
                     text(handle:InputText width:80 height:10 background:white foreground:black wrap:word) 
                     td(
