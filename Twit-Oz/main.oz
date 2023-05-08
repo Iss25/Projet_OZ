@@ -90,6 +90,14 @@ define
         end
     end
 
+
+   %%%
+   %%% Transform a List into a character chain
+   %%%      List: List to transform
+   %%%
+   %%% Returns a character chain
+   %%%
+
    fun {ListToString List}
       fun {ListToStringAcc List Acc}
          case List of
@@ -242,6 +250,14 @@ define
       end
    end
 
+
+   %%%
+   %%% Take a String and replace consecutive space to one single space
+   %%%      String: String to replace consecutive space from
+   %%%
+   %%% Returns updated String
+   %%%
+
    fun {FilterDoubleSpace String}
       fun {FilterDoubleSpaceBool A LastSpace}
          case A 
@@ -308,6 +324,7 @@ define
       end
    end
 
+
    %%%
    %%% Reduces amount of words in the input to NGram 
    %%%   InputTextSplit: Arrays of words
@@ -344,6 +361,7 @@ define
       {List.reverse {StringFirstChar {List.reverse S}}}
    end
 
+
    %%%
    %%% Recursively launches N threads 
    %%%   Input:         Array of words of the user-input text
@@ -371,8 +389,9 @@ define
       end
    end
 
-    %%% Lance les N threads de lecture et de parsing qui liront et traiteront tous les fichiers
-    %%% Les threads de parsing envoient leur resultat au port Port
+
+   %%% Lance les N threads de lecture et de parsing qui liront et traiteront tous les fichiers
+   %%% Les threads de parsing envoient leur resultat au port Port
    proc {LaunchThreads Port N}
       local Files FilePerThread Xn Content Input in 
          Files = {OS.getDir {GetSentenceFolder}}
@@ -388,7 +407,6 @@ define
    end
    
 
-
    %%% Fetch Tweets Folder from CLI Arguments
    %%% See the Makefile for an example of how it is called
    fun {GetSentenceFolder}
@@ -400,15 +418,7 @@ define
    proc {Main}
 
       TweetsFolder = {GetSentenceFolder}
-   in
-      %% Fonction d'exemple qui liste tous les fichiers
-      %% contenus dans le dossier passe en Argument.
-      %% Inspirez vous en pour lire le contenu des fichiers
-      %% se trouvant dans le dossier
-      %%% N'appelez PAS cette fonction lors de la phase de
-      %%% soumission !!!
-      % {ListAllFiles {OS.getDir TweetsFolder}}
-       
+   in       
       local Description Window in
          {Property.put print foo(width:1000 depth:1000)}  
          % Creation de l interface graphique
@@ -419,7 +429,6 @@ define
             text(handle:OutputText width:50 height:10 background:black foreground:white glue:nw wrap:word)
             action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
             )
-         
          
          % Creation de la fenetre
          Window={QTk.build Description}
