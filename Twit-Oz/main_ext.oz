@@ -69,6 +69,7 @@ define
         [] H|T then 
             if H == nil then Tree 
             else
+                {System.show H}
                 {ReadStream T {UpdateOutputTree H {Arity H} Tree}}
             end
         end
@@ -103,6 +104,7 @@ define
             {OutputText set(Return)}
             {OutputText set(state:disabled)}
             {InputText set(state:normal)}
+            {System.show PredictionTree}
             {List.toRecord prediction {List.map SortedArity fun {$ K} K#(PredictionTree.K) end}}
         end
    end
@@ -129,14 +131,24 @@ define
     %%% Returns a prediction candidate if found, nil otherwise
     %%%
 
-    fun {ParseLine Line InputTextSplit Found}
-        case Line#InputTextSplit 
-        of nil#nil then nil
-        [] (A|B)#(C|D) then if A == C then {ParseLine B D true} else {ParseLine B InputTextSplit false} end
-        [] (H|T)#nil then if Found then H else nil end
-        [] nil#(H|T) then nil
-        else nil
+    fun {ParseLine Line InputTextSplit}
+        fun {ParseLineA Line InputTextSplit InitialLength CurrentLength InitialLine}
+            case Line#InputTextSplit 
+            of nil#nil then nil
+            [] (A|B)#(C|D) then if A == C then {ParseLineA B D InitialLength CurrentLength+1 InitialLine} else {ParseLineA B InputTextSplit InitialLength 0 InitialLine} end
+            [] (H|T)#nil then 
+                    if H == '' then nil
+                    elseif CurrentLength == InitialLength then
+                            {System.show {VirtualString.toAtom "found "#H}}{System.show {List.map InitialLine String.toAtom}}    
+                        H
+                    else nil 
+                    end
+            [] nil#(H|T) then nil
+            else nil
+            end
         end
+    in
+        {ParseLineA Line InputTextSplit {Length InputTextSplit} 0 Line}
     end
 
 
@@ -212,7 +224,7 @@ define
 
     fun {ParseFile File Line Struct InputTextSplit} 
         local AtEnd ReadLine Prediction NewTree in 
-            Prediction = {ParseLine {String.tokens {StripPonctuation {Lower Line}} & } InputTextSplit false}
+            Prediction = {ParseLine {String.tokens {StripPonctuation {Lower Line}} & } InputTextSplit}
             NewTree = {UpdatePredictionTree Struct Prediction}
             {File atEnd(AtEnd)}
             if AtEnd then NewTree
@@ -303,7 +315,7 @@ define
                 local R in 
                 {List.takeDrop Files FPT Y Z}
                 R = {LaunchTask Y Tree Input} 
-                {Send Port R}
+                if {Length {Arity R}} \= 0 then {Send Port R} end
                 Xni = Xn
                 end 
             end

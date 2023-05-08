@@ -55,16 +55,16 @@ define
 
    fun {UpdateOutputTree Struct Arity OldStruct}
       case Arity of 
-      nil then Struct
-      [] Predict|T then 
-         if Predict == '' then {UpdateOutputTree Struct T OldStruct} 
+      nil then OldStruct
+      [] Prediction|T then 
+         if Prediction == '' then {UpdateOutputTree Struct T OldStruct} 
          else
-            local Value Val PredictionTree in 
-               Value = {CondSelect OldStruct Predict 0}
-               Val = OldStruct.Predict
-               PredictionTree = {MakeRecord tree [Predict]}
-               PredictionTree.Predict = Value + Val
-               {UpdateOutputTree {Adjoin Struct PredictionTree} T OldStruct}
+            local Value Val PredictionTree NewTree in 
+               Value = {CondSelect OldStruct Prediction 0}
+               Val = Struct.Prediction
+               PredictionTree = {MakeRecord tree [Prediction]}
+               PredictionTree.Prediction = Value + Val
+               {UpdateOutputTree Struct T {Adjoin OldStruct PredictionTree}}
             end
          end
       end
@@ -80,15 +80,15 @@ define
    %%%
    
    fun {ReadStream Stream Tree}
-      case Stream of 
-      nil then Tree
-      [] H|T then 
-         if H == nil then Tree 
-         else
-            {ReadStream T {UpdateOutputTree H {Arity Tree} Tree}}
-         end
-      end
-   end
+        case Stream of 
+        nil then Tree
+        [] H|T then 
+            if H == nil then Tree 
+            else
+                {ReadStream T {UpdateOutputTree H {Arity H} Tree}}
+            end
+        end
+    end
 
    fun {ListToString List}
       fun {ListToStringAcc List Acc}
@@ -155,14 +155,24 @@ define
    %%% Returns a prediction candidate if found, nil otherwise
    %%%
 
-   fun {ParseLine Line InputTextSplit Found}
-      case Line#InputTextSplit 
-      of nil#nil then nil
-      [] (A|B)#(C|D) then if A == C then {ParseLine B D true} else {ParseLine B InputTextSplit false} end
-      [] (H|T)#nil then if Found then H else nil end
-      [] nil#(H|T) then nil
-      else nil
+   fun {ParseLine Line InputTextSplit}
+        fun {ParseLineA Line InputTextSplit InitialLength CurrentLength InitialLine}
+            case Line#InputTextSplit 
+            of nil#nil then nil
+            [] (A|B)#(C|D) then if A == C then {ParseLineA B D InitialLength CurrentLength+1 InitialLine} else {ParseLineA B InputTextSplit InitialLength 0 InitialLine} end
+            [] (H|T)#nil then 
+                        if H == '' then nil
+                        elseif CurrentLength == InitialLength then
+                           {System.show {VirtualString.toAtom "found "#H}}{System.show {List.map InitialLine String.toAtom}}    
+                        H
+                    else nil 
+                    end
+            [] nil#(H|T) then nil
+            else nil
+         end
       end
+   in
+      {ParseLineA Line InputTextSplit {Length InputTextSplit} 0 Line}
    end
 
 
@@ -238,7 +248,7 @@ define
 
    fun {ParseFile File Line Struct InputTextSplit} 
       local AtEnd ReadLine Prediction NewTree in 
-         Prediction = {ParseLine {String.tokens {StripPonctuation {Lower Line}} & } InputTextSplit false}
+         Prediction = {ParseLine {String.tokens {StripPonctuation {Lower Line}} & } InputTextSplit}
          NewTree = {UpdatePredictionTree Struct Prediction}
          {File atEnd(AtEnd)}
          if AtEnd then NewTree
@@ -330,7 +340,7 @@ define
          thread 
             local R in 
                R = {LaunchTask Files N*FilePerThread N*FilePerThread+FPT 0 Tree Input} 
-               {Send Port R}
+               if {Length {Arity R}} \= 0 then {Send Port R} end
                Xni = Xn
             end 
          end
