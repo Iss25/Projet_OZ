@@ -119,6 +119,7 @@ define
          {LaunchThreads SeparatedWordsPort NbThreads}
          TempPredictionTree = prediction()
          PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
+         {System.show PredictionTree}
          BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} [nil] 0}
          if BestPrediction.2 == [0] then Return = "Not Found" 
          else 
@@ -160,18 +161,18 @@ define
          case CurrentLine#CurrentInputTextSplit 
          of nil#nil then Struct
          [] (A|B)#(C|D) then if A == C then 
-               if CurrentLength == 1 then
+               % if CurrentLength == 1 then
                
-                  {System.show {String.toAtom "AAAAAAA"}}
-               {System.show {String.toAtom A}}
-               {System.show {String.toAtom C}}
-               {System.show {Map B String.toAtom}}
-               {System.show {Map D String.toAtom}}
-               {System.show CurrentLength+1}
-               {System.show {Map CurrentLine String.toAtom}}
-               {System.show {Map CurrentInputTextSplit String.toAtom}}
-               {System.show {String.toAtom "--------------"}}
-               end
+               %    {System.show {String.toAtom "AAAAAAA"}}
+               % {System.show {String.toAtom A}}
+               % {System.show {String.toAtom C}}
+               % {System.show {Map B String.toAtom}}
+               % {System.show {Map D String.toAtom}}
+               % {System.show CurrentLength+1}
+               % {System.show {Map CurrentLine String.toAtom}}
+               % {System.show {Map CurrentInputTextSplit String.toAtom}}
+               % {System.show {String.toAtom "--------------"}}
+               % end
              {ParseLineA B D InitialLength CurrentLength+1 Struct} else {ParseLineA B InputTextSplit InitialLength 0 Struct} end
          [] (H|T)#nil then 
             if CurrentLength == InitialLength then {ParseLineA T InputTextSplit InitialLength 0 {UpdatePredictionTree Struct H}}
@@ -228,8 +229,9 @@ define
       case List of
       nil then ResList
       [] H|T then 
-         if {String.toAtom H} == '' then {SpecialToSpace T ResList}
+         if H == nil then {SpecialToSpace T ResList}
          elseif H == 32 then {SpecialToSpace T H|ResList}
+         elseif H == 39 then {SpecialToSpace T ResList}
          elseif H == 10 then {SpecialToSpace T 32|ResList}
          elseif H == 47 then {SpecialToSpace T 32|ResList}
          elseif H < 48 then {SpecialToSpace T ResList}
@@ -259,21 +261,25 @@ define
       end
    end
 
-   fun {FilterDoubleSpace String} 
-      fun {FilterDoubleBool A B Space}
+   fun {FilterDoubleSpace String}
+      fun {FilterDoubleSpaceBool A LastSpace}
          case A 
-         of nil then B
+         of nil then nil
          [] H|T then 
             if H == 32 then
-               if Space then {FilterDoubleBool T B true} 
-               else {FilterDoubleBool T B|H true} end
+               if LastSpace then
+                  {FilterDoubleSpaceBool T true}
+               else
+                  32|{FilterDoubleSpaceBool T true}
+               end
             else
-               {FilterDoubleBool T B false}
+               H|{FilterDoubleSpaceBool T false}
             end
          end
       end
+      A
    in
-      {FilterDoubleBool String 0 false}
+      {FilterDoubleSpaceBool String false}
    end
 
 
@@ -289,7 +295,7 @@ define
    fun {ParseFile File Struct InputTextSplit} 
       local StringedFile in 
          {File read(list:StringedFile size:all)}
-         {ParseLine {String.tokens {StripPonctuation {Lower StringedFile}} & } InputTextSplit}
+         {ParseLine {String.tokens {FilterDoubleSpace {StripPonctuation {Lower StringedFile}}} & } InputTextSplit}
       end
    end
 
@@ -404,7 +410,8 @@ define
          catch E then
             {System.showError E}
          end
-         Input = {NgramInput {List.map {String.tokens {StripLastChar Content} & } Lower}}
+         Input = {NgramInput {List.map {String.tokens {FilterDoubleSpace {StripPonctuation {StripLastChar Content}}} & } Lower}}
+         {Browse Input}
          {LaunchThread Input Port true N Xn Files FilePerThread}
       end
    end
