@@ -1,7 +1,6 @@
 functor
 import 
    QTk at 'x-oz://system/wp/QTk.ozf'
-   System
    Application
    Open
    OS
@@ -171,7 +170,7 @@ define
             if CurrentLength == InitialLength then {ParseLineA T InputTextSplit InitialLength 0 {UpdatePredictionTree Struct H}}
             else {ParseLineA T InputTextSplit {Length InputTextSplit} 0 Struct} 
             end
-         [] nil#(H|T) then Struct
+         [] nil#(_|_) then Struct
          else Struct
          end
       end
@@ -414,16 +413,13 @@ define
    end
     
    proc {Main}
-
-      TweetsFolder = {GetSentenceFolder}
-   in       
       local Description Window in
          {Property.put print foo(width:1000 depth:1000)}  
          % Creation de l interface graphique
          Description=td(
             title: "Text predictor"
             lr(text(handle:InputText width:50 height:10 background:white foreground:black wrap:word) 
-               button(text:"Predict" width:15 action:proc{$} X in X = {Press} end))
+               button(text:"Predict" width:15 action:proc{$} _ in _ = {Press} end))
             text(handle:OutputText width:50 height:10 background:black foreground:white glue:nw wrap:word)
             action:proc{$}{Application.exit 0} end % quitte le programme quand la fenetre est fermee
             )
@@ -433,9 +429,9 @@ define
          {Window show}
       
          {InputText tk(insert 'end' "Loading... Please wait.")}
-         {InputText bind(event:"<Control-s>" action:proc{$} X in X = {Press} end)} % You can also bind events
+         {InputText bind(event:"<Control-s>" action:proc{$} _ in _ = {Press} end)} % You can also bind events
          {InputText bind(event:"<Escape>" action:proc{$}{Application.exit 0} end)}
-         {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
+         {InputText bind(event:"<Return>" action:proc{$} _ in _ = {Press} end)}
       
          {InputText set(1:"")}
          {OutputText set(state:disabled)}
