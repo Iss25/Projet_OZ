@@ -10,7 +10,7 @@ import
 define
    InputText 
    OutputText
-   NGram = 2
+   NGram = 15
    %%% Pour ouvrir les fichiers
    class TextFile
       from Open.file Open.text
@@ -34,7 +34,7 @@ define
 
    fun {GetBestPrediction Tree Arity BestPrediction BestFrequency}
       case Arity of 
-      nil then [BestPrediction [BestFrequency]]
+      nil then [BestPrediction BestFrequency]
       [] H|T then
          if Tree.H > BestFrequency then {GetBestPrediction Tree T [H] Tree.H}
          elseif Tree.H == BestFrequency then {GetBestPrediction Tree T {List.append BestPrediction [H]} BestFrequency}
@@ -99,7 +99,7 @@ define
          end
       end
    in
-      {ListToStringAcc List ''}
+      {ListToStringAcc List nil}
    end
 
 
@@ -119,17 +119,17 @@ define
          {LaunchThreads SeparatedWordsPort NbThreads}
          TempPredictionTree = prediction()
          PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
-         BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} '' 0}
+         BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} [nil] 0}
          if BestPrediction.2 == [0] then Return = "Not Found" 
          else 
-            Return = {VirtualString.toAtom {ListToString BestPrediction.1}#' -> '#{IntToFloat ((BestPrediction.2).1).1}}
+            Return = {VirtualString.toAtom {ListToString BestPrediction.1}#' -> '#{IntToFloat (BestPrediction.2).1}}
          end
 
          {OutputText set(state:normal)}
          {OutputText set(Return)}
          {OutputText set(state:disabled)}
          {InputText set(state:normal)}
-         BestPrediction
+         0
       end
    end
 
@@ -354,6 +354,12 @@ define
          {InputText set(state:normal)}
          {InputText set({StripLastChar Content})}
          {InputText set(state:disabled)}
+         
+         try
+            {System.showError Content}
+         catch E then
+            {System.showError E}
+         end
          Input = {NgramInput {List.map {String.tokens {StripLastChar Content} & } Lower}}
          {LaunchThread Input Port true N Xn Files FilePerThread}
       end
