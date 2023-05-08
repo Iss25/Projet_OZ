@@ -1,7 +1,6 @@
 functor
 import 
     QTk at 'x-oz://system/wp/QTk.ozf'
-    System
     Application
     Open
     OS
@@ -43,7 +42,7 @@ define
         [] Prediction|T then 
             if Prediction == '' then {UpdateOutputTree Struct T OldStruct} 
             else
-                local Value Val PredictionTree NewTree in 
+                local Value Val PredictionTree in 
                 Value = {CondSelect OldStruct Prediction 0}
                 Val = Struct.Prediction
                 PredictionTree = {MakeRecord tree [Prediction]}
@@ -130,23 +129,24 @@ define
     %%%
 
     fun {ParseLine Line InputTextSplit}
-      fun {ParseLineA CurrentLine CurrentInputTextSplit InitialLength CurrentLength Struct}
-         case CurrentLine#CurrentInputTextSplit 
-         of nil#nil then Struct
-         [] (A|B)#(C|D) then if A == C then {ParseLineA B D InitialLength CurrentLength+1 Struct} else {ParseLineA B InputTextSplit InitialLength 0 Struct} end
-         [] (H|T)#nil then 
-            if CurrentLength == InitialLength then {ParseLineA T InputTextSplit InitialLength 0 {UpdatePredictionTree Struct H}}
-            else {ParseLineA T InputTextSplit {Length InputTextSplit} 0 Struct} 
+        fun {ParseLineA CurrentLine CurrentInputTextSplit InitialLength CurrentLength Struct}
+            case CurrentLine#CurrentInputTextSplit 
+            of nil#nil then Struct
+            [] (A|B)#(C|D) then if A == C then {ParseLineA B D InitialLength CurrentLength+1 Struct} else {ParseLineA B InputTextSplit InitialLength 0 Struct} end
+            [] (H|T)#nil then 
+                if CurrentLength == InitialLength then {ParseLineA T InputTextSplit InitialLength 0 {UpdatePredictionTree Struct H}}
+                else {ParseLineA T InputTextSplit {Length InputTextSplit} 0 Struct} 
+                end
+            [] nil#(_|_) then Struct
+            else Struct
             end
-         [] nil#(H|T) then Struct
-         else Struct
-         end
-      end
-      T
-   in
-      T = tree()
-      {ParseLineA Line InputTextSplit {Length InputTextSplit} 0 T}
-   end
+        end
+    in
+        local T in    
+            T = tree()
+            {ParseLineA Line InputTextSplit {Length InputTextSplit} 0 T}
+        end
+    end
 
 
     %%%
@@ -330,10 +330,8 @@ define
         local FPT Xni in 
             if First then FPT = FilePerThread + {Length Files} mod N else FPT = FilePerThread end
             thread 
-                local R in 
                 {LaunchTask Port Files N*FilePerThread N*FilePerThread+FPT 0 Input} 
                 Xni = Xn
-                end 
             end
             if N > 0 then
                 {LaunchThread Input Port false N-1 Xni Files FilePerThread}
@@ -452,7 +450,7 @@ define
                     text(handle:InputText width:80 height:10 background:white foreground:black wrap:word) 
                     td(
                         td(
-                            button(text:"Predict" width:15 action:proc{$} X in X = {Press} end)
+                            button(text:"Predict" width:15 action:proc{$} _ in _ = {Press} end)
                             button(text:"Add database" width:15 action:OpenFileExplorer)
                             listbox(
                                 init:[{String.toAtom {GetSentenceFolder}}]
@@ -463,7 +461,6 @@ define
                                         I = {DatabaseList get(firstselection:$)}
                                         L = {DatabaseList get(1:$)}
                                         S =  {List.nth L I}
-                                        AZA
                                     in 
                                         {Property.put 'directory' S}
                                     end 
@@ -490,9 +487,9 @@ define
             {Window show}
         
             {InputText tk(insert 'end' "Loading... Please wait.")}
-            {InputText bind(event:"<Control-s>" action:proc{$} X in X = {Press} end)} % You can also bind events
+            {InputText bind(event:"<Control-s>" action:proc{$} _ in _ = {Press} end)} % You can also bind events
             {InputText bind(event:"<Escape>" action:proc{$}{Application.exit 0} end)}
-            {InputText bind(event:"<Return>" action:proc{$} X in X = {Press} end)}
+            {InputText bind(event:"<Return>" action:proc{$} _ in _ = {Press} end)}
         
             {InputText set(1:"")}
             {OutputText set(state:disabled)}
