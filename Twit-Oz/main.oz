@@ -59,7 +59,7 @@ define
       [] Prediction|T then 
          if Prediction == '' then {UpdateOutputTree Struct T OldStruct} 
          else
-            local Value Val PredictionTree NewTree in 
+            local Value Val PredictionTree in 
                Value = {CondSelect OldStruct Prediction 0}
                Val = Struct.Prediction
                PredictionTree = {MakeRecord tree [Prediction]}
@@ -119,7 +119,6 @@ define
          {LaunchThreads SeparatedWordsPort NbThreads}
          TempPredictionTree = prediction()
          PredictionTree = {ReadStream SeparatedWordsStream TempPredictionTree}
-         {System.show PredictionTree}
          BestPrediction = {GetBestPrediction PredictionTree {Arity PredictionTree} [nil] 0}
          if BestPrediction.2 == [0] then Return = "Not Found" 
          else 
@@ -161,19 +160,7 @@ define
          case CurrentLine#CurrentInputTextSplit 
          of nil#nil then Struct
          [] (A|B)#(C|D) then if A == C then 
-               % if CurrentLength == 1 then
-               
-               %    {System.show {String.toAtom "AAAAAAA"}}
-               % {System.show {String.toAtom A}}
-               % {System.show {String.toAtom C}}
-               % {System.show {Map B String.toAtom}}
-               % {System.show {Map D String.toAtom}}
-               % {System.show CurrentLength+1}
-               % {System.show {Map CurrentLine String.toAtom}}
-               % {System.show {Map CurrentInputTextSplit String.toAtom}}
-               % {System.show {String.toAtom "--------------"}}
-               % end
-             {ParseLineA B D InitialLength CurrentLength+1 Struct} else {ParseLineA B InputTextSplit InitialLength 0 Struct} end
+            {ParseLineA B D InitialLength CurrentLength+1 Struct} else {ParseLineA B InputTextSplit InitialLength 0 Struct} end
          [] (H|T)#nil then 
             if CurrentLength == InitialLength then {ParseLineA T InputTextSplit InitialLength 0 {UpdatePredictionTree Struct H}}
             else {ParseLineA T InputTextSplit {Length InputTextSplit} 0 Struct} 
@@ -186,12 +173,6 @@ define
    in
       T = tree()
       A = {ParseLineA Line InputTextSplit {Length InputTextSplit} 0 T}
-      % if A \= nil then
-      %    {System.print {String.toAtom "Looking for : "}}
-      %    {System.show {List.map InputTextSplit String.toAtom}}
-      %    {System.show {VirtualString.toAtom "found "}}
-      %    {System.show A}
-      % end
       A  
    end
 
@@ -277,7 +258,6 @@ define
             end
          end
       end
-      A
    in
       {FilterDoubleSpaceBool String false}
    end
@@ -379,10 +359,8 @@ define
       local FPT Xni in 
          if First then FPT = FilePerThread + {Length Files} mod N else FPT = FilePerThread end
          thread 
-            local R in 
-               {LaunchTask Port Files N*FilePerThread N*FilePerThread+FPT 0 Input} 
-               Xni = Xn
-            end 
+            {LaunchTask Port Files N*FilePerThread N*FilePerThread+FPT 0 Input} 
+            Xni = Xn
          end
          if N > 0 then
             {LaunchThread Input Port false N-1 Xni Files FilePerThread}
@@ -404,14 +382,7 @@ define
          {InputText set(state:normal)}
          {InputText set({StripLastChar Content})}
          {InputText set(state:disabled)}
-         
-         try
-            {System.showError Content}
-         catch E then
-            {System.showError E}
-         end
          Input = {NgramInput {List.map {String.tokens {FilterDoubleSpace {StripPonctuation {StripLastChar Content}}} & } Lower}}
-         {Browse Input}
          {LaunchThread Input Port true N Xn Files FilePerThread}
       end
    end
